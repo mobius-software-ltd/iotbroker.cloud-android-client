@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/tm_dialog_layout"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:layout_margin="20dp"
+    android:orientation="vertical"
+    android:padding="2dip" >
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="75dp" >
+
+        <TextView
+            android:id="@+id/lbl_topicsname"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical|center_horizontal"
+            android:layout_marginStart="10dp"
+            android:layout_weight="3"
+            android:labelFor="@+id/tbx_topics_name"
+            android:text="@string/tp_dialog_lbl_topic_name" />
+
+        <EditText
+            android:id="@+id/tbx_topics_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical|center_horizontal"
+            android:layout_marginEnd="10dp"
+            android:layout_weight="3"
+            android:inputType="text" >
+
+            <requestFocus />
+        </EditText>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="75dp" >
+
+        <TextView
+            android:id="@+id/lbl_qos"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical|center_horizontal"
+            android:layout_marginStart="10dp"
+            android:layout_weight="3"
+            android:labelFor="@+id/spnr_qos"
+            android:text="@string/tp_dialog_lbl_qos" />
+
+        <Spinner
+            android:id="@+id/spnr_qos"
+            android:layout_width="30dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical|center_horizontal"
+            android:layout_marginEnd="10dp"
+            android:layout_weight="3"
+            android:ems="10"
+            android:entries="@array/qos_array" />
+
+    </LinearLayout>
+
+</LinearLayout>

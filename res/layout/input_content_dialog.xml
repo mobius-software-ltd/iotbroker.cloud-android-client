@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/tm_dialog_layout"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:layout_margin="20dp"
+    android:orientation="vertical"
+    android:padding="2dip" >
+
+    <EditText
+        android:id="@+id/tbx_content"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp"
+        android:ellipsize="end"    
+        android:lines="4"
+        android:maxLines="4"       
+        android:inputType="none">
+    </EditText>
+</LinearLayout>

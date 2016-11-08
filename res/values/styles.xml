@@ -1,0 +1,49 @@
+<resources>
+
+    <!--
+        Base application theme, dependent on API level. This theme is replaced
+        by AppBaseTheme from res/values-vXX/styles.xml on newer devices.
+    -->
+    <style name="AppBaseTheme" parent="android:Theme.Light">
+        <!--
+            Theme customizations available in newer API levels can go in
+            res/values-vXX/styles.xml, while customizations related to
+            backward-compatibility can go here.
+        -->
+
+    </style>
+
+    <!-- Application theme. -->
+    <style name="AppTheme" parent="AppBaseTheme">
+        <!-- All customizations that are NOT specific to a particular API-level can go here. -->
+    </style>
+
+    <color name="tab_bar_background">#f9f9f9</color>
+    <color name="tab_bar_tab_text_selected">#a0a7ab</color>
+    <color name="action_bar_background">#1876db</color>
+    <color name="action_bar_text_color">#ffffff</color>
+
+    <style name="iotBrokerTheme" parent="AppBaseTheme">
+        <item name="android:actionBarTabStyle">@style/iotBrokerTheme.ActionBar.TabView</item>
+        <item name="android:actionBarTabTextStyle">@style/iotBrokerTheme.ActionBar.TabText</item>
+        <item name="android:actionBarStyle">@style/iotBrokerTheme.ActionBar.Background</item>
+    </style>
+
+    <style name="iotBrokerTheme.ActionBar.TabView" parent="android:style/Widget.Holo.ActionBar.TabView">
+        <item name="android:background">@color/tab_bar_background</item>
+    </style>
+
+    <style name="iotBrokerTheme.ActionBar.TabText" parent="android:style/Widget.Holo.ActionBar.TabText">
+        <item name="android:textColor">@color/tab_bar_tab_text_selected</item>
+    </style>
+
+    <style name="iotBrokerTheme.ActionBar.Background" parent="@android:style/Widget.Holo.Light.ActionBar">
+        <item name="android:background">@color/action_bar_background</item>
+        <item name="android:titleTextStyle">@style/iotBrokerTheme.ActionBar.TitleTextStyle</item>
+    </style>
+
+    <style name="iotBrokerTheme.ActionBar.TitleTextStyle" parent="@android:style/TextAppearance.Holo.Widget.ActionBar.Title">
+        <item name="android:textColor">@color/action_bar_text_color</item>
+    </style>
+
+</resources>

@@ -1,0 +1,96 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_gravity="center"
+    android:layout_weight="1"
+    android:orientation="vertical" >
+
+    <LinearLayout
+        android:id="@+id/message_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#fff"
+        android:minHeight="60dp"
+        android:orientation="horizontal" >
+
+        <TextView
+            android:id="@+id/tbxTopicsTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical|center_horizontal"
+            android:layout_marginBottom="5dp"
+            android:layout_marginEnd="10dp"
+            android:layout_marginStart="10dp"
+            android:layout_marginTop="5dp"
+            android:layout_weight="1"
+            android:minWidth="75dp"
+            android:textSize="20sp" />
+
+        <TextView
+            android:id="@+id/tbxQos"
+            android:layout_width="match_parent"
+            android:layout_height="20dp"
+            android:layout_gravity="end|center_vertical"
+            android:layout_marginEnd="20dp"
+            android:layout_marginStart="5dp"
+            android:layout_weight="3"
+            android:background="@drawable/tbx_qos_border"
+            android:gravity="center_vertical|center_horizontal"
+            android:minWidth="85dp"
+            android:textSize="13sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/delete_block"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:background="#53575a"
+        android:duplicateParentState="true"
+        android:minHeight="60dp"
+        android:orientation="horizontal"
+         android:visibility="gone"
+        >
+
+        <ImageButton
+            android:id="@+id/imgbtn_delete"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:layout_marginStart="10dp"
+            android:background="@null"
+            android:clickable="false"
+            android:contentDescription="@string/delete_this_topic_description"
+            android:duplicateParentState="false"
+            android:src="@drawable/delete_topic_icon" />
+
+        <Button
+            android:id="@+id/btn_delete_topics"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:layout_marginStart="5dp"
+            android:layout_weight="3"
+            android:background="@null"
+            android:text="@string/lbl_delete_topics"       
+            android:contentDescription="@string/tl_delete_this_topic"
+            android:textSize="17sp" />
+
+        <Button
+            android:id="@+id/btn_cancel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginBottom="10dp"
+            android:layout_marginEnd="10dp"
+            android:layout_marginStart="10dp"
+            android:layout_marginTop="10dp"
+            android:layout_weight="0.58"
+            android:background="@drawable/button_border"
+            android:minHeight="30dp"
+            android:minWidth="60dp"
+            android:text="@string/topics_btn_Cancel"
+            android:textColor="#f6e344" />
+    </LinearLayout>
+
+</LinearLayout>
