@@ -254,4 +254,14 @@ public class NetworkService extends Service implements NetworkStateListener {
 		addIntent.setAction(AppBroadcastManager.NETWORK_CHANGED);
 		instance.getApplicationContext().sendBroadcast(addIntent);
 	}	
+	
+	public static void writeError() {
+		deActivateService();
+		if(instance!=null)
+		{
+			Intent addIntent = new Intent();
+			addIntent.setAction(AppBroadcastManager.NETWORK_DOWN);
+			instance.getApplicationContext().sendBroadcast(addIntent);
+		}
+	}
 }

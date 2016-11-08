@@ -29,6 +29,8 @@ import io.netty.channel.ChannelPromise;
 
 import java.net.SocketAddress;
 
+import com.mobius.software.android.iotbroker.mqtt.services.NetworkService;
+
 import android.util.Log;
 
 @Sharable
@@ -74,7 +76,10 @@ public class ExceptionHandler extends ChannelDuplexHandler {
 			@Override
 			public void operationComplete(ChannelFuture future) {
 				if (!future.isSuccess())
+				{
 					Log.d("", "an error occured while write");
+					NetworkService.writeError();
+				}
 			}
 		}));
 	}

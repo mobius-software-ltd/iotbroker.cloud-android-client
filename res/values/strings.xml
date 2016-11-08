@@ -125,5 +125,5 @@
     <string name="no_network_access">No network access</string>
     <string name="no_network_error">Network error</string>
     <string name="no_network_error_message">An error occurred while attempting to contact the server. Please check your internet connection</string>
-
+    <string name="will_topic_can_not_be_null">Will Topic can not be null</string>
 </resources>

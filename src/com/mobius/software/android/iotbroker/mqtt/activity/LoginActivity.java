@@ -265,9 +265,15 @@ public class LoginActivity extends Activity   {
 
 		Spinner spnrQos = (Spinner) findViewById(R.id.tbx_qos);
 		int qosNumb = Integer.parseInt(spnrQos.getSelectedItem().toString());
-				
+		
 		EditText tbx_will_topic = (EditText) findViewById(R.id.tbx_will_topic);
 		String willTopic = tbx_will_topic.getText().toString();
+		
+		if(willMessage.length()>0 && willTopic.length()==0){
+			MessageDialog.showMessage(this, errorTitle,
+					getString(R.string.will_topic_can_not_be_null));
+			return;
+		}
 	 	
 		login(serverHost, username, userpass, clientID, isCleanSession,keepAlive,willTopic, willMessage, isRetain, qosNumb,true);
 	}
@@ -285,7 +291,7 @@ public class LoginActivity extends Activity   {
 		}
 		
 		Will will=null;
-		if(willMessage!=null)
+		if(willMessage!=null && willMessage.length()>0)
 		{
 			will=new Will();		
 			will.setContent(willMessage.getBytes());
@@ -421,10 +427,10 @@ public class LoginActivity extends Activity   {
 							if(will!=null)
 							{
 								AccountDAO loginAccount = new AccountDAO(username,password,clientID,hostname,cleanSession,keepalive,  new String(will.getContent())
-								,new String(will.getContent()),will.getRetain(),will.getTopic().getQos(),1);
+								,will.getTopic().getName().toString(),will.getRetain(),will.getTopic().getQos(),1);
 								
 								manager.insert(loginAccount);
-							}
+							} 
 							else {
 								
 								AccountDAO loginAccount = new AccountDAO(username,password,clientID,hostname,cleanSession,keepalive,

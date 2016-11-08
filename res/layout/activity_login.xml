@@ -157,7 +157,7 @@
                     android:layout_gravity="center_vertical|center_horizontal"
                     android:layout_weight="5"
                     android:ems="10"
-                    android:inputType="textPassword"
+                    android:inputType="text"
                   >
                 </EditText>
             </LinearLayout>
