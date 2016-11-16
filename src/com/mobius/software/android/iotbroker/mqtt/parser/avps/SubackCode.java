@@ -1,4 +1,4 @@
-package com.mobius.software.android.iotbroker.mqtt.parser;
+package com.mobius.software.android.iotbroker.mqtt.parser.avps;
 
 /**
  * Mobius Software LTD
@@ -20,26 +20,38 @@ package com.mobius.software.android.iotbroker.mqtt.parser;
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-public class StringVerifier
+import java.util.HashMap;
+import java.util.Map;
+
+public enum SubackCode
 {
-	private static final String NULL_CHARACTER = "\u0000";
+	ACCEPTED_QOS0(0), ACCEPTED_QOS1(1), ACCEPTED_QOS2(2), FAILURE(128);
 
-	public static boolean verify(String topic)
+	private int num;
+
+	private static Map<Integer, SubackCode> map = new HashMap<Integer, SubackCode>();
+
+	static
 	{
-		if (topic.length() > 0)
+		for (SubackCode legEnum : SubackCode.values())
 		{
-			if (topic.contains(NULL_CHARACTER))
-				return false;
-
-			for (int i = 0; i < topic.length(); i++)
-			{
-			 	char c = topic.charAt(i);
-				if (Character.isLowSurrogate(c) || Character.isHighSurrogate(c))
-					return false;
-			}
+			map.put(legEnum.num, legEnum);
 		}
+	}
 
-		return true;
+	public byte getNum()
+	{
+		return (byte) num;
+	}
+
+	private SubackCode(final int leg)
+	{
+		num = leg;
+	}
+
+	public static SubackCode valueOf(int type)
+	{
+		return map.get(type);
 	}
 
 }

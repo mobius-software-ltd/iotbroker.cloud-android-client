@@ -20,7 +20,7 @@ package com.mobius.software.android.iotbroker.mqtt.dal;
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-import com.mobius.software.android.iotbroker.mqtt.parser.QoS;
+import com.mobius.software.android.iotbroker.mqtt.parser.avps.QoS;
 
 public class AccountDAO {
 

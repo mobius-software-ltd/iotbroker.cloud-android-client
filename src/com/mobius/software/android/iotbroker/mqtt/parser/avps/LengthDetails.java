@@ -1,4 +1,4 @@
-package com.mobius.software.android.iotbroker.mqtt.parser.header.impl;
+package com.mobius.software.android.iotbroker.mqtt.parser.avps;
 
 /**
  * Mobius Software LTD
@@ -20,44 +20,24 @@ package com.mobius.software.android.iotbroker.mqtt.parser.header.impl;
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-import com.mobius.software.android.iotbroker.mqtt.parser.avps.MessageType;
-import com.mobius.software.android.iotbroker.mqtt.parser.header.api.MQDevice;
-import com.mobius.software.android.iotbroker.mqtt.parser.header.api.MQMessage;
-
-public class Pubrec implements MQMessage
+public class LengthDetails
 {
-	private Integer packetID;
-
-	public Pubrec(Integer packetID)
+	private int length;
+	private int size;
+	
+	public LengthDetails(int length,int size)
 	{
-		this.packetID = packetID;
+		this.length=length;
+		this.size=size;
 	}
 
-	@Override
-	public void processBy(MQDevice device)
-	{
-		device.processPubrec(packetID);
-	}
-
-	@Override
 	public int getLength()
 	{
-		return 2;
+		return length;
 	}
 
-	@Override
-	public MessageType getType()
+	public int getSize()
 	{
-		return MessageType.PUBREC;
-	}
-	
-	public Integer getPacketID()
-	{
-		return packetID;
-	}
-
-	public void setPacketID(Integer packetID)
-	{
-		this.packetID = packetID;
-	}
+		return size;
+	}		
 }

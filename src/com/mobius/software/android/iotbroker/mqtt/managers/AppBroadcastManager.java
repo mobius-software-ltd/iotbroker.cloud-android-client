@@ -30,7 +30,7 @@ import android.content.Intent;
 import com.mobius.software.android.iotbroker.mqtt.activity.LoadingActivity;
 import com.mobius.software.android.iotbroker.mqtt.listeners.MessageListener;
 import com.mobius.software.android.iotbroker.mqtt.listeners.StatusChangedListener;
-import com.mobius.software.android.iotbroker.mqtt.parser.header.impl.MessageType;
+import com.mobius.software.android.iotbroker.mqtt.parser.avps.MessageType;
 import com.mobius.software.android.iotbroker.mqtt.services.NetworkService;
 import com.mobius.software.iotbroker.androidclient.R;
 

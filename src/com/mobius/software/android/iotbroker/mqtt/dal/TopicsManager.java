@@ -28,7 +28,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 
-import com.mobius.software.android.iotbroker.mqtt.parser.Text;
+import com.mobius.software.android.iotbroker.mqtt.parser.avps.Text;
 
 public class TopicsManager {
 

@@ -23,6 +23,8 @@ package com.mobius.software.android.iotbroker.mqtt.parser.header.impl;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.mobius.software.android.iotbroker.mqtt.parser.avps.MessageType;
+import com.mobius.software.android.iotbroker.mqtt.parser.avps.SubackCode;
 import com.mobius.software.android.iotbroker.mqtt.parser.header.api.MQDevice;
 import com.mobius.software.android.iotbroker.mqtt.parser.header.api.MQMessage;
 

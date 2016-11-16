@@ -1,4 +1,4 @@
-package com.mobius.software.android.iotbroker.mqtt.parser.header.impl;
+package com.mobius.software.android.iotbroker.mqtt.parser.exceptions;
 
 /**
  * Mobius Software LTD
@@ -20,38 +20,13 @@ package com.mobius.software.android.iotbroker.mqtt.parser.header.impl;
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-import java.util.HashMap;
-import java.util.Map;
-
-public enum ConnackCode
+public class MalformedMessageException extends RuntimeException
 {
-	ACCEPTED(0), UNACCEPTABLE_PROTOCOL_VERSION(1), IDENTIFIER_REJECTED(2), SERVER_UNUVALIABLE(3), BAD_USER_OR_PASS(4), NOT_AUTHORIZED(5);
+	private static final long serialVersionUID = 1L;
 
-	private int num;
-
-	private static Map<Integer, ConnackCode> map = new HashMap<Integer, ConnackCode>();
-
-	static
+	public MalformedMessageException(String message)
 	{
-		for (ConnackCode legEnum : ConnackCode.values())
-		{
-			map.put(legEnum.num, legEnum);
-		}
-	}
-
-	public byte getNum()
-	{
-		return (byte) num;
-	}
-
-	private ConnackCode(final int leg)
-	{
-		num = leg;
-	}
-
-	public static ConnackCode valueOf(int type)
-	{
-		return map.get(type);
+		super(message);
 	}
 
 }

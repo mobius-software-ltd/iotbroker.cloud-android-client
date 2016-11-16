@@ -1,4 +1,4 @@
-package com.mobius.software.android.iotbroker.mqtt.parser.header.impl;
+package com.mobius.software.android.iotbroker.mqtt.parser.avps;
 
 /**
  * Mobius Software LTD
@@ -20,38 +20,61 @@ package com.mobius.software.android.iotbroker.mqtt.parser.header.impl;
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-import java.util.HashMap;
-import java.util.Map;
-
-public enum SubackCode
+public class Will
 {
-	ACCEPTED_QOS0(0), ACCEPTED_QOS1(1), ACCEPTED_QOS2(2), FAILURE(128);
+	private Topic topic;
+	private byte[] content;
+	private Boolean retain;
 
-	private int num;
-
-	private static Map<Integer, SubackCode> map = new HashMap<Integer, SubackCode>();
-
-	static
+	public Will()
 	{
-		for (SubackCode legEnum : SubackCode.values())
-		{
-			map.put(legEnum.num, legEnum);
-		}
+
 	}
 
-	public byte getNum()
+	public Will(Topic topic, byte[] content, Boolean retain)
 	{
-		return (byte) num;
+		this.topic = topic;
+		this.content = content;
+		this.retain = retain;
 	}
 
-	private SubackCode(final int leg)
+	public int retrieveLentth()
 	{
-		num = leg;
+		return topic.length() + content.length + 4;
 	}
 
-	public static SubackCode valueOf(int type)
+	public Topic getTopic()
 	{
-		return map.get(type);
+		return topic;
 	}
 
+	public void setTopic(Topic topic)
+	{
+		this.topic = topic;
+	}
+
+	public byte[] getContent()
+	{
+		return content;
+	}
+
+	public void setContent(byte[] content)
+	{
+		this.content = content;
+	}
+
+	public Boolean getRetain()
+	{
+		return retain;
+	}
+
+	public void setRetain(Boolean retain)
+	{
+		this.retain = retain;
+	}
+
+	public boolean isValid()
+	{
+		return this.topic != null && this.topic.length() > 0 && this.content != null && this.topic.getQos() != null;
+	}
 }

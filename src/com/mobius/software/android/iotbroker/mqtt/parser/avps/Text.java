@@ -1,4 +1,4 @@
-package com.mobius.software.android.iotbroker.mqtt.parser;
+package com.mobius.software.android.iotbroker.mqtt.parser.avps;
 
 /**
  * Mobius Software LTD

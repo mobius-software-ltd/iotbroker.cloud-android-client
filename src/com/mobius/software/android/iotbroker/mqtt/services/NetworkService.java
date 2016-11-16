@@ -37,11 +37,11 @@ import com.mobius.software.android.iotbroker.mqtt.managers.AppBroadcastManager;
 import com.mobius.software.android.iotbroker.mqtt.managers.ConnectionState;
 import com.mobius.software.android.iotbroker.mqtt.managers.ConnectionTimerTask;
 import com.mobius.software.android.iotbroker.mqtt.managers.NetworkManager;
-import com.mobius.software.android.iotbroker.mqtt.parser.QoS;
-import com.mobius.software.android.iotbroker.mqtt.parser.Text;
-import com.mobius.software.android.iotbroker.mqtt.parser.Topic;
-import com.mobius.software.android.iotbroker.mqtt.parser.Will;
-import com.mobius.software.android.iotbroker.mqtt.parser.header.impl.MessageType;
+import com.mobius.software.android.iotbroker.mqtt.parser.avps.MessageType;
+import com.mobius.software.android.iotbroker.mqtt.parser.avps.QoS;
+import com.mobius.software.android.iotbroker.mqtt.parser.avps.Text;
+import com.mobius.software.android.iotbroker.mqtt.parser.avps.Topic;
+import com.mobius.software.android.iotbroker.mqtt.parser.avps.Will;
 
 public class NetworkService extends Service implements NetworkStateListener {
 

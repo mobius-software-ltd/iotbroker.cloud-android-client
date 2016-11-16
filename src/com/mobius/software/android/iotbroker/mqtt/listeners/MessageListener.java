@@ -20,7 +20,7 @@ package com.mobius.software.android.iotbroker.mqtt.listeners;
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-import com.mobius.software.android.iotbroker.mqtt.parser.header.impl.MessageType;
+import com.mobius.software.android.iotbroker.mqtt.parser.avps.MessageType;
 
 public interface  MessageListener  {
 

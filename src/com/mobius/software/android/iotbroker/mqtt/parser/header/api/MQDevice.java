@@ -22,10 +22,10 @@ package com.mobius.software.android.iotbroker.mqtt.parser.header.api;
 
 import java.util.List;
 
-import com.mobius.software.android.iotbroker.mqtt.parser.Topic;
-import com.mobius.software.android.iotbroker.mqtt.parser.Will;
-import com.mobius.software.android.iotbroker.mqtt.parser.header.impl.ConnackCode;
-import com.mobius.software.android.iotbroker.mqtt.parser.header.impl.SubackCode;
+import com.mobius.software.android.iotbroker.mqtt.parser.avps.ConnackCode;
+import com.mobius.software.android.iotbroker.mqtt.parser.avps.SubackCode;
+import com.mobius.software.android.iotbroker.mqtt.parser.avps.Topic;
+import com.mobius.software.android.iotbroker.mqtt.parser.avps.Will;
 
 public interface MQDevice
 {

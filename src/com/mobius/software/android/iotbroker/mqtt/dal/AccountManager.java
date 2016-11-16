@@ -23,7 +23,7 @@ package com.mobius.software.android.iotbroker.mqtt.dal;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.mobius.software.android.iotbroker.mqtt.parser.QoS;
+import com.mobius.software.android.iotbroker.mqtt.parser.avps.QoS;
 
 import android.content.ContentValues;
 import android.content.Context;

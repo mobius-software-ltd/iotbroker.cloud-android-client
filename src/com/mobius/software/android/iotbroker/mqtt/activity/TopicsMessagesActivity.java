@@ -18,7 +18,7 @@ import com.mobius.software.android.iotbroker.mqtt.fragments.SendMessageFragment;
 import com.mobius.software.android.iotbroker.mqtt.fragments.TopicsListFragment;
 import com.mobius.software.android.iotbroker.mqtt.listeners.MessageListener;
 import com.mobius.software.android.iotbroker.mqtt.managers.AppBroadcastManager;
-import com.mobius.software.android.iotbroker.mqtt.parser.header.impl.MessageType;
+import com.mobius.software.android.iotbroker.mqtt.parser.avps.MessageType;
 import com.mobius.software.android.iotbroker.mqtt.services.NetworkService;
 import com.mobius.software.iotbroker.androidclient.R;
 

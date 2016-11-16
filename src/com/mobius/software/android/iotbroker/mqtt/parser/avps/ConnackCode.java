@@ -1,4 +1,4 @@
-package com.mobius.software.android.iotbroker.mqtt.parser;
+package com.mobius.software.android.iotbroker.mqtt.parser.avps;
 
 /**
  * Mobius Software LTD
@@ -20,24 +20,38 @@ package com.mobius.software.android.iotbroker.mqtt.parser;
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-public class LengthDetails
+import java.util.HashMap;
+import java.util.Map;
+
+public enum ConnackCode
 {
-	private int length;
-	private int size;
-	
-	public LengthDetails(int length,int size)
+	ACCEPTED(0), UNACCEPTABLE_PROTOCOL_VERSION(1), IDENTIFIER_REJECTED(2), SERVER_UNUVALIABLE(3), BAD_USER_OR_PASS(4), NOT_AUTHORIZED(5);
+
+	private int num;
+
+	private static Map<Integer, ConnackCode> map = new HashMap<Integer, ConnackCode>();
+
+	static
 	{
-		this.length=length;
-		this.size=size;
+		for (ConnackCode legEnum : ConnackCode.values())
+		{
+			map.put(legEnum.num, legEnum);
+		}
 	}
 
-	public int getLength()
+	public byte getNum()
 	{
-		return length;
+		return (byte) num;
 	}
 
-	public int getSize()
+	private ConnackCode(final int leg)
 	{
-		return size;
-	}		
+		num = leg;
+	}
+
+	public static ConnackCode valueOf(int type)
+	{
+		return map.get(type);
+	}
+
 }

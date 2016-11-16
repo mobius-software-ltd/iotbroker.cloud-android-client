@@ -27,12 +27,19 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.mobius.software.android.iotbroker.mqtt.parser.avps.ConnackCode;
+import com.mobius.software.android.iotbroker.mqtt.parser.avps.LengthDetails;
+import com.mobius.software.android.iotbroker.mqtt.parser.avps.MessageType;
+import com.mobius.software.android.iotbroker.mqtt.parser.avps.QoS;
+import com.mobius.software.android.iotbroker.mqtt.parser.avps.SubackCode;
+import com.mobius.software.android.iotbroker.mqtt.parser.avps.Text;
+import com.mobius.software.android.iotbroker.mqtt.parser.avps.Topic;
+import com.mobius.software.android.iotbroker.mqtt.parser.avps.Will;
+import com.mobius.software.android.iotbroker.mqtt.parser.exceptions.MalformedMessageException;
 import com.mobius.software.android.iotbroker.mqtt.parser.header.api.MQMessage;
 import com.mobius.software.android.iotbroker.mqtt.parser.header.impl.Connack;
-import com.mobius.software.android.iotbroker.mqtt.parser.header.impl.ConnackCode;
 import com.mobius.software.android.iotbroker.mqtt.parser.header.impl.Connect;
 import com.mobius.software.android.iotbroker.mqtt.parser.header.impl.Disconnect;
-import com.mobius.software.android.iotbroker.mqtt.parser.header.impl.MessageType;
 import com.mobius.software.android.iotbroker.mqtt.parser.header.impl.Pingreq;
 import com.mobius.software.android.iotbroker.mqtt.parser.header.impl.Pingresp;
 import com.mobius.software.android.iotbroker.mqtt.parser.header.impl.Puback;
@@ -41,10 +48,10 @@ import com.mobius.software.android.iotbroker.mqtt.parser.header.impl.Publish;
 import com.mobius.software.android.iotbroker.mqtt.parser.header.impl.Pubrec;
 import com.mobius.software.android.iotbroker.mqtt.parser.header.impl.Pubrel;
 import com.mobius.software.android.iotbroker.mqtt.parser.header.impl.Suback;
-import com.mobius.software.android.iotbroker.mqtt.parser.header.impl.SubackCode;
 import com.mobius.software.android.iotbroker.mqtt.parser.header.impl.Subscribe;
 import com.mobius.software.android.iotbroker.mqtt.parser.header.impl.Unsuback;
 import com.mobius.software.android.iotbroker.mqtt.parser.header.impl.Unsubscribe;
+import com.mobius.software.android.iotbroker.mqtt.utility.StringVerifier;
 
 public class MQParser
 {

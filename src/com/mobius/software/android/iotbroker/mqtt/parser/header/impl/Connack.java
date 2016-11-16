@@ -20,6 +20,8 @@ package com.mobius.software.android.iotbroker.mqtt.parser.header.impl;
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
+import com.mobius.software.android.iotbroker.mqtt.parser.avps.ConnackCode;
+import com.mobius.software.android.iotbroker.mqtt.parser.avps.MessageType;
 import com.mobius.software.android.iotbroker.mqtt.parser.header.api.MQDevice;
 import com.mobius.software.android.iotbroker.mqtt.parser.header.api.MQMessage;
 

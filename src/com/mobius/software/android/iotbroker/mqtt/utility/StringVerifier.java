@@ -1,4 +1,4 @@
-package com.mobius.software.android.iotbroker.mqtt.parser;
+package com.mobius.software.android.iotbroker.mqtt.utility;
 
 /**
  * Mobius Software LTD
@@ -20,13 +20,26 @@ package com.mobius.software.android.iotbroker.mqtt.parser;
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-public class MalformedMessageException extends RuntimeException
+public class StringVerifier
 {
-	private static final long serialVersionUID = 1L;
+	private static final String NULL_CHARACTER = "\u0000";
 
-	public MalformedMessageException(String message)
+	public static boolean verify(String topic)
 	{
-		super(message);
+		if (topic.length() > 0)
+		{
+			if (topic.contains(NULL_CHARACTER))
+				return false;
+
+			for (int i = 0; i < topic.length(); i++)
+			{
+			 	char c = topic.charAt(i);
+				if (Character.isLowSurrogate(c) || Character.isHighSurrogate(c))
+					return false;
+			}
+		}
+
+		return true;
 	}
 
 }
