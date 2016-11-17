@@ -47,7 +47,7 @@ public class PingResendTimerTask extends TimerTask {
 	@Override
 	public void run() {
 		if (NetworkService.hasInstance()) {
-			if (status && NetworkService.checkConnectStatus()) {
+			if (status) {
 				client.send(message);
 				timersMap.startPingTimer(keepalive);
 			}

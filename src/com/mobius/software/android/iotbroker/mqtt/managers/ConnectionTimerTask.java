@@ -22,21 +22,26 @@ package com.mobius.software.android.iotbroker.mqtt.managers;
 
 import java.util.TimerTask;
 
+import com.mobius.software.android.iotbroker.mqtt.MqttClient;
 import com.mobius.software.android.iotbroker.mqtt.services.NetworkService;
 
 public class ConnectionTimerTask extends TimerTask 
 {
 	public static int REFRESH_PERIOD=500;
+	private MqttClient client;
+	
+	public ConnectionTimerTask(MqttClient client)
+	{
+		this.client=client;
+	}
 	
 	@Override
 	public void run() 
 	{
 		if(NetworkService.hasInstance())
 		{
-			if(NetworkService.checkConnectStatus())
-				NetworkService.updateStatus(ConnectionState.CHANNEL_ESTABLISHED);
-			else
-				NetworkService.executeTimer(new ConnectionTimerTask(),REFRESH_PERIOD);
+			if(!client.checkCreated())
+				client.executeTimer(new ConnectionTimerTask(client),REFRESH_PERIOD);
 		}	
 	}
 }

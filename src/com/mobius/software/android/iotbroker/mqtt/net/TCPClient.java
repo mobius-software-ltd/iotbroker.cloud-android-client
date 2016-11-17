@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
 
 import android.util.Log;
 
-import com.mobius.software.android.iotbroker.mqtt.ConnectionListener;
+import com.mobius.software.android.iotbroker.mqtt.listeners.ConnectionListener;
 import com.mobius.software.android.iotbroker.mqtt.parser.header.api.MQMessage;
 
 public class TCPClient {
@@ -95,7 +95,7 @@ public class TCPClient {
 					socketChannel.pipeline().addLast("handler",
 							new MQHandler(listener));
 					socketChannel.pipeline().addLast(new MQEncoder());
-					socketChannel.pipeline().addLast(new ExceptionHandler());
+					socketChannel.pipeline().addLast(new ExceptionHandler(listener));
 				}
 			});
 			bootstrap.remoteAddress(address);

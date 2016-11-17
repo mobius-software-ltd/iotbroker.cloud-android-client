@@ -27,6 +27,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 
+import com.mobius.software.android.iotbroker.mqtt.MqttClient;
 import com.mobius.software.android.iotbroker.mqtt.activity.LoadingActivity;
 import com.mobius.software.android.iotbroker.mqtt.listeners.MessageListener;
 import com.mobius.software.android.iotbroker.mqtt.listeners.StatusChangedListener;
@@ -75,12 +76,12 @@ public class AppBroadcastManager extends BroadcastReceiver  {
 		{
 			if(messageListener!=null)
 			{				
-				MessageType messageType = (MessageType)intent.getSerializableExtra(NetworkService.MESSAGETYPE_PARAM);
+				MessageType messageType = (MessageType)intent.getSerializableExtra(MqttClient.MESSAGETYPE_PARAM);
 				messageListener.messageReceived(messageType);
 			}
 			else
 			{
-				MessageType messageType = (MessageType)intent.getSerializableExtra(NetworkService.MESSAGETYPE_PARAM);
+				MessageType messageType = (MessageType)intent.getSerializableExtra(MqttClient.MESSAGETYPE_PARAM);
 				if(messageType==MessageType.PUBLISH)
 					showNotification(context);
 			}

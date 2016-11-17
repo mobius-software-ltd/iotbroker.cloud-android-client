@@ -23,16 +23,23 @@ package com.mobius.software.android.iotbroker.mqtt;
 import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import android.content.Context;
+import android.content.Intent;
 
 import com.mobius.software.android.iotbroker.mqtt.dal.AccountDAO;
 import com.mobius.software.android.iotbroker.mqtt.dal.AccountManager;
 import com.mobius.software.android.iotbroker.mqtt.dal.MessagesManager;
 import com.mobius.software.android.iotbroker.mqtt.dal.TopicDAO;
 import com.mobius.software.android.iotbroker.mqtt.dal.TopicsManager;
+import com.mobius.software.android.iotbroker.mqtt.listeners.ClientStateListener;
+import com.mobius.software.android.iotbroker.mqtt.listeners.ConnectionListener;
+import com.mobius.software.android.iotbroker.mqtt.managers.AppBroadcastManager;
 import com.mobius.software.android.iotbroker.mqtt.managers.ConnectResendTimerTask;
 import com.mobius.software.android.iotbroker.mqtt.managers.ConnectionState;
+import com.mobius.software.android.iotbroker.mqtt.managers.ConnectionTimerTask;
 import com.mobius.software.android.iotbroker.mqtt.managers.MessageResendTimerTask;
 import com.mobius.software.android.iotbroker.mqtt.net.TCPClient;
 import com.mobius.software.android.iotbroker.mqtt.parser.avps.ConnackCode;
@@ -52,15 +59,17 @@ import com.mobius.software.android.iotbroker.mqtt.parser.header.impl.Pubrec;
 import com.mobius.software.android.iotbroker.mqtt.parser.header.impl.Pubrel;
 import com.mobius.software.android.iotbroker.mqtt.parser.header.impl.Subscribe;
 import com.mobius.software.android.iotbroker.mqtt.parser.header.impl.Unsubscribe;
-import com.mobius.software.android.iotbroker.mqtt.services.NetworkService;
 
 public class MqttClient implements MQDevice, ConnectionListener {
+
+	public final static String MESSAGETYPE_PARAM = "MESSAGETYPE";
 
 	public static final int SERVER_PORT = 1883;
 	private Integer workerThreads = 4;
 	private final long PERIOD = 3000;
 
 	private InetSocketAddress address;
+	private ConnectionState connectionState;
 
 	private TimersMap timers;
 	private TCPClient client;
@@ -71,12 +80,14 @@ public class MqttClient implements MQDevice, ConnectionListener {
 	private int keepalive;
 	private Will will;
 	private Context context;
+	private ClientStateListener listener;
+	private Timer timer = new Timer();
+	
+	public MqttClient(InetSocketAddress address, String username,
+			String password, String clientID, boolean isClean, int keepalive,
+			Will will, Context context) {
 
-	public MqttClient(InetSocketAddress address, String username, String password,
-			String clientID, boolean isClean, int keepalive, Will will,
-			Context context) {
-
-		this.address=address;
+		this.address = address;
 		this.username = username;
 		this.password = password;
 		this.clientID = clientID;
@@ -85,14 +96,39 @@ public class MqttClient implements MQDevice, ConnectionListener {
 		this.will = will;
 		this.context = context;
 		client = new TCPClient(address, workerThreads);
-
 	}
 
+	public void setListener(ClientStateListener listener)
+	{
+		this.listener=listener;
+	}
+	
+	private void setState(ConnectionState state)
+	{
+		this.connectionState=state;
+		if(this.listener!=null)
+			listener.stateChanged(state);
+	}
+	
 	public Boolean createChannel() {
-		return client.init(this);
+		setState(ConnectionState.CHANNEL_CREATING);		
+		Boolean isSuccess = client.init(this);
+		if (!isSuccess)
+			setState(ConnectionState.CHANNEL_FAILED);
+		else
+		{
+			ConnectionTimerTask connectionCheckTask = new ConnectionTimerTask(this);
+			executeTimer(connectionCheckTask,ConnectionTimerTask.REFRESH_PERIOD);
+		}
+		
+		return isSuccess;
 	}
 
 	public boolean checkCreated() {
+		Boolean isConnected=client.isConnected();
+		if(isConnected && connectionState==ConnectionState.CHANNEL_CREATING)
+			setState(ConnectionState.CHANNEL_ESTABLISHED);
+		
 		return client.isConnected();
 	}
 
@@ -100,21 +136,23 @@ public class MqttClient implements MQDevice, ConnectionListener {
 		return connectionState == ConnectionState.CONNECTION_ESTABLISHED;
 	}
 
+	public ConnectionState getConnectionState() {
+		return connectionState;
+	}
+
 	public void closeChannel() {
 		client.shutdown();
 	}
 
-	public ConnectionState connectionState;
-	public MessageType messageType;
-
 	public void connect() {
+		setState(ConnectionState.CONNECTING);		
 		Connect connect = new Connect(username, password, clientID, isClean,
 				keepalive, will);
 
 		if (timers != null)
 			timers.stopAllTimers();
 
-		timers = new TimersMap(client, PERIOD);
+		timers = new TimersMap(this, client, PERIOD);
 		timers.storeConnectTimer(connect);
 
 		if (client.isConnected()) {
@@ -123,9 +161,12 @@ public class MqttClient implements MQDevice, ConnectionListener {
 	}
 
 	public void disconnect() {
-		client.send(new Disconnect());
-		client.close();
-		messageType = MessageType.DISCONNECT;
+		if (client.isConnected()) {
+			client.send(new Disconnect());
+			client.close();
+		}
+
+		setState(ConnectionState.NONE);
 		return;
 	}
 
@@ -133,8 +174,6 @@ public class MqttClient implements MQDevice, ConnectionListener {
 		Subscribe subscribe = new Subscribe(topics);
 		timers.store(subscribe);
 		client.send(subscribe);
-
-		messageType = MessageType.SUBSCRIBE;
 	}
 
 	public void unsubscribe(Topic[] topics) {
@@ -151,9 +190,12 @@ public class MqttClient implements MQDevice, ConnectionListener {
 	}
 
 	public void reinit() {
+
+		setState(ConnectionState.CHANNEL_CREATING);
+
 		if (client != null)
 			client.shutdown();
-		
+
 		client = new TCPClient(address, workerThreads);
 	}
 
@@ -161,10 +203,9 @@ public class MqttClient implements MQDevice, ConnectionListener {
 		if (timers != null)
 			timers.stopAllTimers();
 
-		if (client != null)
-		{
-			TCPClient currClient=client;
-			client=null;
+		if (client != null) {
+			TCPClient currClient = client;
+			client = null;
 			currClient.shutdown();
 		}
 	}
@@ -180,12 +221,10 @@ public class MqttClient implements MQDevice, ConnectionListener {
 	}
 
 	@Override
-	public void connectionLost() {		
+	public void connectionLost() {
 		if (isClean)
 			clearAccountTopics();
-		connectionState = ConnectionState.CONNECTION_LOST;
-		NetworkService.updateStatus(connectionState);
-
+		setState(ConnectionState.CONNECTION_LOST);		
 	}
 
 	@Override
@@ -195,7 +234,7 @@ public class MqttClient implements MQDevice, ConnectionListener {
 
 		// CHECK CODE , IF OK THEN MOVE TO CONNECTED AND NOTIFY NETWORK SESSION
 		if (code == ConnackCode.ACCEPTED) {
-			connectionState = ConnectionState.CONNECTION_ESTABLISHED;
+			setState(ConnectionState.CONNECTION_ESTABLISHED);
 
 			if (timer != null) {
 				Connect connect = (Connect) timer.retrieveMessage();
@@ -205,14 +244,14 @@ public class MqttClient implements MQDevice, ConnectionListener {
 			}
 
 			timers.startPingTimer(keepalive);
-			NetworkService.updateStatus(connectionState);
+			// /NetworkService.updateStatus(connectionState);
+
 		} else {
 			// OTHERWISE MOVE TO CONNECT FAILED, STOP CLIENT AND NOTIFY NETWORK
 			// SESION
 			timers.stopAllTimers();
 			client.shutdown();
-			connectionState = ConnectionState.CHANNEL_FAILED;
-			NetworkService.updateStatus(connectionState);
+			setState(ConnectionState.CHANNEL_FAILED);
 		}
 	}
 
@@ -260,15 +299,16 @@ public class MqttClient implements MQDevice, ConnectionListener {
 
 		TopicsManager manager = new TopicsManager(context);
 
-		AccountDAO currAccount = retrieveAccount() ;
+		AccountDAO currAccount = retrieveAccount();
 		TopicDAO oldTopic = manager.getByName(topicName, currAccount.getId());
 		if (oldTopic != null)
 			manager.update(oldTopic.getId(), topicName, qos,
 					currAccount.getId());
 		else
 			manager.insert(topicName, qos, currAccount.getId());
-	
-		NetworkService.sendMessageIntent(MessageType.SUBACK);
+
+		sendMessageIntent(MessageType.SUBACK);
+
 	}
 
 	@Override
@@ -283,7 +323,7 @@ public class MqttClient implements MQDevice, ConnectionListener {
 				manager.deleteByName(topic.getName(), retrieveAccount().getId());
 		}
 
-		NetworkService.sendMessageIntent(MessageType.UNSUBACK);
+		sendMessageIntent(MessageType.UNSUBACK);
 	}
 
 	@Override
@@ -303,7 +343,7 @@ public class MqttClient implements MQDevice, ConnectionListener {
 			break;
 		}
 
-		NetworkService.sendMessageIntent(MessageType.PUBLISH);
+		sendMessageIntent(MessageType.PUBLISH);
 
 		TopicsManager manager = new TopicsManager(context);
 		String topicName = topic.getName().toString();
@@ -311,18 +351,19 @@ public class MqttClient implements MQDevice, ConnectionListener {
 		AccountDAO account = retrieveAccount();
 		if (!manager.isTopicExist(topicName, account.getId()))
 			return;
-	
+
 		MessagesManager mesManager = new MessagesManager(context);
 		int qos = publisherQos.getValue();
 
-		if ( !(isDup && publisherQos == QoS.EXACTLY_ONCE)) {
+		if (!(isDup && publisherQos == QoS.EXACTLY_ONCE)) {
 			String contentMessage = null;
 			try {
 				contentMessage = new String(content, "UTF-8");
-				mesManager.insert(topicName, contentMessage, qos,retrieveAccount().getId());
-				
+				mesManager.insert(topicName, contentMessage, qos,
+						retrieveAccount().getId());
+
 			} catch (UnsupportedEncodingException e) {
-				
+
 			}
 		}
 	}
@@ -330,7 +371,7 @@ public class MqttClient implements MQDevice, ConnectionListener {
 	@Override
 	public void processPuback(Integer packetID) {
 		timers.remove(packetID);
-		NetworkService.sendMessageIntent(MessageType.PUBACK);
+		sendMessageIntent(MessageType.PUBACK);
 	}
 
 	@Override
@@ -348,8 +389,8 @@ public class MqttClient implements MQDevice, ConnectionListener {
 	@Override
 	public void processPubcomp(Integer packetID) {
 		timers.remove(packetID);
-		NetworkService.sendMessageIntent(MessageType.PUBCOMP);
-		
+		sendMessageIntent(MessageType.PUBCOMP);
+
 	}
 
 	@Override
@@ -381,4 +422,24 @@ public class MqttClient implements MQDevice, ConnectionListener {
 	public void processUnsubscribe(Integer packetID, Topic[] topics) {
 		throw new CoreLogicException("received invalid message unsubscribe");
 	}
+
+	public void sendMessageIntent(MessageType messageType) {
+		Intent intent = new Intent();
+		intent.putExtra(MESSAGETYPE_PARAM, messageType);
+		intent.setAction(AppBroadcastManager.MESSAGE_STATUS_UPDATED);
+
+		context.sendBroadcast(intent);
+	}
+	
+	public void executeTimer(TimerTask task, long period) 
+	{
+		timer.schedule(task, period);
+	}
+
+	@Override
+	public void writeError() 
+	{
+		if(this.listener!=null)
+			listener.writeError();
+	}	
 }

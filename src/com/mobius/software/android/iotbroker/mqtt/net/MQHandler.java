@@ -24,7 +24,7 @@ import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 
-import com.mobius.software.android.iotbroker.mqtt.ConnectionListener;
+import com.mobius.software.android.iotbroker.mqtt.listeners.ConnectionListener;
 import com.mobius.software.android.iotbroker.mqtt.parser.header.api.MQMessage;
 
 @Sharable

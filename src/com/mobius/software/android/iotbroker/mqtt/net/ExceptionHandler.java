@@ -26,17 +26,21 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
-
 import java.net.SocketAddress;
-
-import com.mobius.software.android.iotbroker.mqtt.services.NetworkService;
-
+import com.mobius.software.android.iotbroker.mqtt.listeners.ConnectionListener;
+import com.mobius.software.iotbroker.androidclient.R;
 import android.util.Log;
 
 @Sharable
 public class ExceptionHandler extends ChannelDuplexHandler {
 	private static final String separator = ",";
 
+	private ConnectionListener listener;
+	public ExceptionHandler(ConnectionListener listener)
+	{
+		this.listener=listener;
+	}
+	
 	@Override
 	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
 		SocketAddress address = ctx.channel().remoteAddress();
@@ -78,7 +82,9 @@ public class ExceptionHandler extends ChannelDuplexHandler {
 				if (!future.isSuccess())
 				{
 					Log.d("", "an error occured while write");
-					NetworkService.writeError();
+					
+					if(listener!=null)
+						listener.writeError();
 				}
 			}
 		}));

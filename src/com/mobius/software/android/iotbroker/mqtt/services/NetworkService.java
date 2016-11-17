@@ -21,8 +21,6 @@ package com.mobius.software.android.iotbroker.mqtt.services;
  */
 
 import java.net.InetSocketAddress;
-import java.util.Timer;
-import java.util.TimerTask;
 
 import android.annotation.SuppressLint;
 import android.app.Service;
@@ -32,30 +30,24 @@ import android.os.AsyncTask;
 import android.os.IBinder;
 
 import com.mobius.software.android.iotbroker.mqtt.MqttClient;
+import com.mobius.software.android.iotbroker.mqtt.listeners.ClientStateListener;
 import com.mobius.software.android.iotbroker.mqtt.listeners.NetworkStateListener;
 import com.mobius.software.android.iotbroker.mqtt.managers.AppBroadcastManager;
 import com.mobius.software.android.iotbroker.mqtt.managers.ConnectionState;
-import com.mobius.software.android.iotbroker.mqtt.managers.ConnectionTimerTask;
 import com.mobius.software.android.iotbroker.mqtt.managers.NetworkManager;
-import com.mobius.software.android.iotbroker.mqtt.parser.avps.MessageType;
 import com.mobius.software.android.iotbroker.mqtt.parser.avps.QoS;
 import com.mobius.software.android.iotbroker.mqtt.parser.avps.Text;
 import com.mobius.software.android.iotbroker.mqtt.parser.avps.Topic;
 import com.mobius.software.android.iotbroker.mqtt.parser.avps.Will;
 
-public class NetworkService extends Service implements NetworkStateListener {
-
-	ConnectionTimerTask timerTask;
+public class NetworkService extends Service implements NetworkStateListener,ClientStateListener {
 
 	private static NetworkService instance = null;
 	private static MqttClient client = null;
-	private static Timer timer = new Timer();
-
-
-	public final static String MESSAGETYPE_PARAM = "MESSAGETYPE";
-
+	
 	@Override
-	public IBinder onBind(Intent intent) {
+	public IBinder onBind(Intent intent) 
+	{
 		return null;
 	}
 
@@ -64,13 +56,14 @@ public class NetworkService extends Service implements NetworkStateListener {
 	public void onCreate() {
 		if (instance == null) {
 			instance = this;
-			
+
 			NetworkManager.updateNetworkInfo(this);
 			NetworkManager.setNetworkListener(this);
-			
+
 			if (client != null) {
-				updateStatus(client.connectionState);
-			}								
+				client.setListener(instance);
+				this.stateChanged(client.getConnectionState());
+			}
 		}
 	}
 
@@ -82,92 +75,50 @@ public class NetworkService extends Service implements NetworkStateListener {
 		return instance != null;
 	}
 
-	public static void updateStatus(ConnectionState status) {		
-		client.connectionState = status;
-		sendStatusChangedIntent(client.connectionState);
-
-		switch (client.connectionState) {
-		case CHANNEL_ESTABLISHED:
-			client.connectionState = ConnectionState.CONNECTING;
-			sendStatusChangedIntent(client.connectionState);
-			if (client.checkCreated())
-				client.connect();
-			break;
-		case CONNECTION_LOST:
-			client.closeConnection();
-		default:
-			break;
-		}
-	}
-
-	private static void sendStatusChangedIntent(ConnectionState state) {
-		Intent addIntent = new Intent();
-		addIntent.putExtra("status", state.toString());
-		addIntent.setAction(AppBroadcastManager.NETWORK_STATUS_CHANGE);
-		instance.getApplicationContext().sendBroadcast(addIntent);
-	}
-
-	public static void sendMessageIntent(MessageType messageType) {
-
-		Intent intent = new Intent();
-		intent.putExtra(MESSAGETYPE_PARAM, messageType);
-		intent.setAction(AppBroadcastManager.MESSAGE_STATUS_UPDATED);
-
-		instance.getApplicationContext().sendBroadcast(intent);
-	}
-
 	public static Boolean reactivate() {
 		client.reinit();
-		client.connectionState = ConnectionState.CHANNEL_CREATING;
-		Boolean response = client.createChannel();
-		if (!response)
-			client.connectionState = ConnectionState.CHANNEL_FAILED;
-		else {
-			ConnectionTimerTask connectionCheckTask = new ConnectionTimerTask();
-			executeTimer(connectionCheckTask,
-					ConnectionTimerTask.REFRESH_PERIOD);
-		}
-
-		return response;
+		return client.createChannel();		
 	}
 
-	public static Boolean activateService(InetSocketAddress address, String username,
-			String password, String clientID, boolean isClean, int keepalive,
-			Will will) {
-		if (client != null) {			
-			client.closeConnection();			
+	public static Boolean activateService(InetSocketAddress address,String username, String password, String clientID, boolean isClean,int keepalive, Will will) 
+	{
+		if (client != null) 
+		{
+			client.closeConnection();
 			client = null;
 		}
 
 		Context context = getCurrentContext();
-		client = new MqttClient(address, username, password, clientID,
-				isClean, keepalive, will, context);
-
-		client.connectionState = ConnectionState.CHANNEL_CREATING;
-		Boolean response = client.createChannel();
-		if (!response)
-			client.connectionState = ConnectionState.CHANNEL_FAILED;
-		else {
-			ConnectionTimerTask connectionCheckTask = new ConnectionTimerTask();
-			executeTimer(connectionCheckTask,
-					ConnectionTimerTask.REFRESH_PERIOD);
-		}
-
-		return response;
+		client = new MqttClient(address, username, password, clientID, isClean,keepalive, will, context);
+		client.setListener(instance);
+		return client.createChannel();		
 	}
 
 	public static void deActivateService() {
 		if (client != null) {
-			if(client.checkConnected())
+			if (client.checkConnected())
 				client.disconnect();
-			
-			updateStatus(ConnectionState.NONE);
+
 			client = null;
 		}
 	}
 
-	public static Boolean checkConnectStatus() {
-		return client != null && client.checkCreated();
+	public static ConnectionState getStatus() {
+		if (client == null)
+			return ConnectionState.NONE;
+
+		return client.getConnectionState();
+	}
+
+	@Override
+	public void onDestroy() {
+		deActivateService();
+		instance = null;
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public static void executeAsyncTask(AsyncTask task, Object... strings) {
+		task.execute(strings);
 	}
 
 	public static void subscribe(String topicName, int qos) {
@@ -192,38 +143,10 @@ public class NetworkService extends Service implements NetworkStateListener {
 		}
 	}
 
-	public static ConnectionState getStatus() {
-		if (client == null)
-			return ConnectionState.NONE;
-
-		return client.connectionState;
-	}
-
-	public static MessageType getMessageType() {
-		if (client == null)
-			return MessageType.DISCONNECT;
-
-		return client.messageType;
-	}
-
-	@Override
-	public void onDestroy() {
-		deActivateService();
-		instance = null;
-	}
-
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public static void executeAsyncTask(AsyncTask task, Object... strings) {
-		task.execute(strings);
-	}
-
-	public static void executeTimer(TimerTask task, long period) {
-		timer.schedule(task, period);
-	}
-
-	public static void publish(String content, String topicName, int qos,
-			String packedId, boolean isRetain, boolean isDublicate) {
-		if (client != null && client.checkConnected()) {
+	public static void publish(String content, String topicName, int qos,String packedId, boolean isRetain, boolean isDublicate) 
+	{
+		if (client != null && client.checkConnected()) 
+		{
 			QoS qosItem = QoS.valueOf(qos);
 			Text topicNameTxt = new Text(topicName);
 			Topic topic = new Topic(topicNameTxt, qosItem);
@@ -253,15 +176,33 @@ public class NetworkService extends Service implements NetworkStateListener {
 		Intent addIntent = new Intent();
 		addIntent.setAction(AppBroadcastManager.NETWORK_CHANGED);
 		instance.getApplicationContext().sendBroadcast(addIntent);
-	}	
-	
-	public static void writeError() {
+	}
+
+	public void writeError() {
 		deActivateService();
-		if(instance!=null)
-		{
+		if (instance != null) {
 			Intent addIntent = new Intent();
 			addIntent.setAction(AppBroadcastManager.NETWORK_DOWN);
 			instance.getApplicationContext().sendBroadcast(addIntent);
 		}
 	}
+
+	@Override
+	public void stateChanged(ConnectionState newState) {
+		Intent addIntent = new Intent();
+		addIntent.putExtra("status", newState.toString());
+		addIntent.setAction(AppBroadcastManager.NETWORK_STATUS_CHANGE);
+		instance.getApplicationContext().sendBroadcast(addIntent);
+
+		switch (client.getConnectionState()) {
+		case CHANNEL_ESTABLISHED:
+			if (client.checkCreated())
+				client.connect();
+			break;
+		case CONNECTION_LOST:
+			client.closeConnection();
+		default:
+			break;
+		}		
+	}	
 }

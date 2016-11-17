@@ -31,7 +31,6 @@ import com.mobius.software.android.iotbroker.mqtt.net.TCPClient;
 import com.mobius.software.android.iotbroker.mqtt.parser.header.api.CountableMessage;
 import com.mobius.software.android.iotbroker.mqtt.parser.header.api.MQMessage;
 import com.mobius.software.android.iotbroker.mqtt.parser.header.impl.Pingreq;
-import com.mobius.software.android.iotbroker.mqtt.services.NetworkService;
 
 public class TimersMap {
 	private static final int MAX_VALUE = 65535;
@@ -43,10 +42,12 @@ public class TimersMap {
 	private ConcurrentSkipListMap<Integer, MessageResendTimerTask> timersMap = new ConcurrentSkipListMap<Integer, MessageResendTimerTask>();
 	private ConnectResendTimerTask connect;
 	private PingResendTimerTask ping;
-
-	public TimersMap(TCPClient listener, Long period) {
+	private MqttClient client;
+	
+	public TimersMap(MqttClient client,TCPClient listener, Long period) {
 		this.listener = listener;
 		this.period = period;
+		this.client=client;
 	}
 
 	public void store(MQMessage message) {
@@ -61,7 +62,7 @@ public class TimersMap {
 		} while (timersMap.putIfAbsent(packetID, timer) != null);
 		CountableMessage countable = (CountableMessage) message;
 		countable.setPacketID(packetID);
-		NetworkService.executeTimer(timer, period);
+		client.executeTimer(timer, period);
 	}
 
 	public void refreshTimer(MQMessage message) {
@@ -72,7 +73,7 @@ public class TimersMap {
 				countable.getPacketID(), timer);
 		if (oldTimer != null)
 			oldTimer.stop();
-		NetworkService.executeTimer(timer, period);
+		client.executeTimer(timer, period);
 	}
 
 	public MessageResendTimerTask remove(Integer packetID) {
@@ -105,7 +106,7 @@ public class TimersMap {
 			connect.stop();
 
 		connect = timer;
-		NetworkService.executeTimer(connect, period);
+		client.executeTimer(connect, period);
 	}
 
 	public ConnectResendTimerTask stopConnectTimer() {
@@ -121,6 +122,6 @@ public class TimersMap {
 			ping.stop();
 		ping = timer;
 
-		NetworkService.executeTimer(ping, keepalive * 1000);
+		client.executeTimer(ping, keepalive * 1000);
 	}
 }

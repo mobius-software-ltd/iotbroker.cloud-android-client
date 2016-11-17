@@ -1,4 +1,4 @@
-package com.mobius.software.android.iotbroker.mqtt;
+package com.mobius.software.android.iotbroker.mqtt.listeners;
 
 /**
  * Mobius Software LTD
@@ -26,5 +26,7 @@ public interface ConnectionListener {
 
 	void packetReceived(MQMessage message);
 
-	void connectionLost();
+	void connectionLost();	
+	
+	void writeError();
 }
