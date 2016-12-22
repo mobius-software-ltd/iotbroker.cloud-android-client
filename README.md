@@ -4,11 +4,15 @@ IoTBroker.Cloud is an Android client which allows to connect to MQTT server via 
 
 ## Features
 
-* Clean / persistent session. When the client disconnects, its session state can be stored (if you set Clean session flag to false) or removed (if you set Clean session flag to true). The session state includes subscriptions and incoming QoS 1 and QoS 2 messages while the client is off.
-* Last Will and Testament. This feature implies that if a client goes offline without sending DISCONNECT message (due to some failure), other clients will be notified about that.
-* Keep Alive. If Keep Alive is higher than 0, the client and the server is constantly exchanging PING messages to make sure whether the opposite side is still available. 
-* Retain messages. It allows to "attach" a message to a particular topic, so the new subscribers become immediately aware of the last known state of a topic.
-* Assured message delivery. Each message is sent according to the level of Quality of Service (QoS). QoS has 3 levels:
+* **Clean / persistent session.** When the client disconnects, its session state can be stored (if you set Clean session flag to false) or removed (if you set Clean session flag to true). The session state includes subscriptions and incoming QoS 1 and QoS 2 messages while the client is off.
+
+* **Last Will and Testament.** This feature implies that if a client goes offline without sending DISCONNECT message (due to some failure), other clients will be notified about that.
+
+* **Keep Alive.** If Keep Alive is higher than 0, the client and the server is constantly exchanging PING messages to make sure whether the opposite side is still available. 
+
+* **Retain messages.** It allows to "attach" a message to a particular topic, so the new subscribers become immediately aware of the last known state of a topic.
+
+* **Assured message delivery.** Each message is sent according to the level of Quality of Service (QoS). QoS has 3 levels:
 - QoS 0 (At most once) — a message is sent only one time. The fastest message flow, but message loss may take place. 
 - QoS 1 (At least once) — a message is sent at least one time. The message duplication may occur.  
 - QoS 2 (Exactly once) — a message is sent exactly one time.  But QoS 2 message flow is the slowest one. 
