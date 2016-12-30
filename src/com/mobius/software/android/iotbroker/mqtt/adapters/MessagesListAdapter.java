@@ -29,22 +29,24 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
 
-import com.mobius.software.android.iotbroker.mqtt.dal.MessageDAO;
+import com.mobius.software.android.iotbroker.mqtt.dal.Messages;
 import com.mobius.software.iotbroker.androidclient.R;
 
 public class MessagesListAdapter extends BaseAdapter {
 
 	private final String QOS_TITLE = "QOS : ";
-	
+
+	private static String MESSAGE_IN_TEXT = "in";
+	private static String MESSAGE_OUT_TEXT = "out";
+
 	Context ctx;
 	LayoutInflater lInflater;
-	List<MessageDAO> objects;
+	List<Messages> objects;
 
-	public MessagesListAdapter(Context context, List<MessageDAO> messageArray) {
+	public MessagesListAdapter(Context context, List<Messages> messageArray) {
 		ctx = context;
 		objects = messageArray;
-		lInflater = (LayoutInflater) ctx
-				.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+		lInflater = (LayoutInflater) ctx.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 	}
 
 	@Override
@@ -70,24 +72,28 @@ public class MessagesListAdapter extends BaseAdapter {
 		if (view == null) {
 			view = lInflater.inflate(R.layout.messages_list_item, parent, false);
 		}
-	
-		MessageDAO messageItem = getMessage(position);
-		
+
+		Messages messageItem = getMessage(position);
+
 		String qosStr = Integer.toString(messageItem.getQos());
 		String qosLine = QOS_TITLE.concat(qosStr);
+
+		String isIncominText = messageItem.getIsIncoming() > 0 ? MESSAGE_OUT_TEXT : MESSAGE_IN_TEXT;
+
 		((TextView) view.findViewById(R.id.lblQos)).setText(qosLine);
 
+		((TextView) view.findViewById(R.id.lbl_incmomming)).setText(isIncominText);
 		((TextView) view.findViewById(R.id.lbl_TopicName)).setText(messageItem.getTopicName());
 		((TextView) view.findViewById(R.id.lbl_messages_item)).setText(messageItem.getMessageItem());
-		
+
 		return view;
 	}
 
-	MessageDAO getMessage(int position) {
-		return ((MessageDAO) getItem(position));
+	Messages getMessage(int position) {
+		return ((Messages) getItem(position));
 	}
 
-	public void updateList(List<MessageDAO> messagesArray) {
-		this.objects = messagesArray;		
-	}	
+	public void updateList(List<Messages> messagesArray) {
+		this.objects = messagesArray;
+	}
 }

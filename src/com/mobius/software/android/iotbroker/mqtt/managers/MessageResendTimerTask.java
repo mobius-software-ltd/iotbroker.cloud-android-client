@@ -22,30 +22,42 @@ package com.mobius.software.android.iotbroker.mqtt.managers;
 
 import java.util.TimerTask;
 
+import com.mobius.software.android.iotbroker.mqtt.MqttClient;
 import com.mobius.software.android.iotbroker.mqtt.TimersMap;
 import com.mobius.software.android.iotbroker.mqtt.net.TCPClient;
+import com.mobius.software.android.iotbroker.mqtt.parser.avps.MessageType;
 import com.mobius.software.android.iotbroker.mqtt.parser.header.api.MQMessage;
-import com.mobius.software.android.iotbroker.mqtt.services.NetworkService;
+import com.mobius.software.android.iotbroker.mqtt.parser.header.impl.Publish;
 
 public class MessageResendTimerTask extends TimerTask {
 
 	private MQMessage message;
 	private TCPClient client;
 	private TimersMap timersMap;
-	public static int REFRESH_PERIOD = 500;
+	private int period;
+
+	public int getPeriod() {
+		return period;
+	}
+
 	private boolean status = true;
 
-	public MessageResendTimerTask(MQMessage message, TCPClient client,
-			TimersMap timersMap) {
+	public MessageResendTimerTask(MQMessage message, TCPClient client, TimersMap timersMap, int period) {
 		this.message = message;
 		this.client = client;
 		this.timersMap = timersMap;
+		this.period = period;
 	}
 
 	@Override
 	public void run() {
-		if (NetworkService.hasInstance()) {
+		if (MqttClient.currentState() != ConnectionState.CONNECTION_LOST) {
+
 			if (status) {
+				if (message.getType() == MessageType.PUBLISH) {
+					Publish publish = (Publish) message;
+					publish.setDup(true);
+				}
 				client.send(message);
 				timersMap.refreshTimer(message);
 			}

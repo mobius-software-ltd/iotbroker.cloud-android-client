@@ -14,6 +14,7 @@
         android:targetSdkVersion="17" />
 
     <application
+         android:name="com.mobius.software.android.iotbroker.mqtt.base.IotBrokerApplication"
         android:allowBackup="true"
         android:icon="@drawable/iotbroker_icon_big"
         android:label="@string/app_name"
@@ -51,17 +52,8 @@
             android:screenOrientation="portrait" >
             </activity>
 
-        <service android:name="com.mobius.software.android.iotbroker.mqtt.services.NetworkService" ></service>
-        
-        <receiver android:name="com.mobius.software.android.iotbroker.mqtt.managers.AppBroadcastManager" >
-            <intent-filter>
-                <action android:name="com.mobuis.software.mqtt.managers.AppBroadcastManager.NETWORK_STATUS_CHANGE" />
-                <action android:name="com.mobuis.software.mqtt.managers.AppBroadcastManager.MESSAGE_STATUS_UPDATED" />
-				<action android:name="com.mobuis.software.mqtt.managers.AppBroadcastManager.NETWORK_UP" />                
-				<action android:name="com.mobuis.software.mqtt.managers.AppBroadcastManager.NETWORK_DOWN" />
-				<action android:name="com.mobuis.software.mqtt.managers.AppBroadcastManager.NETWORK_CHANGED" />
-            </intent-filter>
-        </receiver>
+        <service android:name="com.mobius.software.android.iotbroker.mqtt.services.NetworkService" ></service>        
+       
         
         <receiver android:name="com.mobius.software.android.iotbroker.mqtt.managers.NetworkBroadcastManager" >
             <intent-filter>

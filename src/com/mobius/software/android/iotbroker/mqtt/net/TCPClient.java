@@ -46,8 +46,6 @@ public class TCPClient {
 	private Channel channel;
 	private ChannelFuture channelConnect;
 
-	// handlers for client connections
-
 	public TCPClient(InetSocketAddress address, Integer workerThreads) {
 		this.address = address;
 		this.workerThreads = workerThreads;
@@ -58,9 +56,9 @@ public class TCPClient {
 			channel.close();
 			channel = null;
 		}
-		
+
 		if (loopGroup != null)
-			loopGroup.shutdownGracefully();		
+			loopGroup.shutdownGracefully();
 	}
 
 	public void close() {
@@ -72,7 +70,8 @@ public class TCPClient {
 			loopGroup.shutdownGracefully();
 			try {
 				loopGroup.awaitTermination(1000, TimeUnit.MILLISECONDS);
-			} catch (InterruptedException e) {
+			}
+			catch (InterruptedException e) {
 
 			}
 		}
@@ -89,22 +88,23 @@ public class TCPClient {
 
 			bootstrap.handler(new ChannelInitializer<SocketChannel>() {
 				@Override
-				protected void initChannel(SocketChannel socketChannel)
-						throws Exception {
+				protected void initChannel(SocketChannel socketChannel) throws Exception {
 					socketChannel.pipeline().addLast(new MQDecoder());
-					socketChannel.pipeline().addLast("handler",
-							new MQHandler(listener));
+					socketChannel.pipeline().addLast("handler", new MQHandler(listener));
 					socketChannel.pipeline().addLast(new MQEncoder());
 					socketChannel.pipeline().addLast(new ExceptionHandler(listener));
 				}
 			});
 			bootstrap.remoteAddress(address);
+
 			try {
 				channelConnect = bootstrap.connect().sync();
-			} catch (InterruptedException e) {
+			}
+			catch (InterruptedException e) {
 				e.printStackTrace();
 				return false;
-			} catch (Exception ex) {
+			}
+			catch (Exception ex) {
 				ex.printStackTrace();
 				return false;
 			}
@@ -114,12 +114,11 @@ public class TCPClient {
 	}
 
 	public void send(MQMessage message) {
-		Log.d("SEND_MESSAGE", message.getType().toString());
+
 		if (channel != null && channel.isOpen())
 			channel.writeAndFlush(message);
 		else {
-			Log.d("TAG", "Failed sending message "
-					+ message.getType().toString());
+			Log.d("TAG", "Failed sending message " + message.getType().toString());
 		}
 	}
 

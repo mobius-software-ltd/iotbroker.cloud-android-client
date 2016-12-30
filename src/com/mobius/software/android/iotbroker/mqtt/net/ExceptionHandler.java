@@ -26,10 +26,12 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
+
 import java.net.SocketAddress;
-import com.mobius.software.android.iotbroker.mqtt.listeners.ConnectionListener;
-import com.mobius.software.iotbroker.androidclient.R;
+
 import android.util.Log;
+
+import com.mobius.software.android.iotbroker.mqtt.listeners.ConnectionListener;
 
 @Sharable
 public class ExceptionHandler extends ChannelDuplexHandler {

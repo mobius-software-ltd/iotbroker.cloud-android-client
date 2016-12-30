@@ -26,6 +26,7 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.Fragment;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -37,10 +38,13 @@ import android.widget.Spinner;
 import android.widget.TextView;
 
 import com.mobius.software.android.iotbroker.mqtt.adapters.TopicsListAdapter;
-import com.mobius.software.android.iotbroker.mqtt.dal.AccountDAO;
-import com.mobius.software.android.iotbroker.mqtt.dal.AccountManager;
-import com.mobius.software.android.iotbroker.mqtt.dal.TopicDAO;
-import com.mobius.software.android.iotbroker.mqtt.dal.TopicsManager;
+import com.mobius.software.android.iotbroker.mqtt.base.ApplicationSettings;
+import com.mobius.software.android.iotbroker.mqtt.base.DaoObject;
+import com.mobius.software.android.iotbroker.mqtt.dal.Accounts;
+import com.mobius.software.android.iotbroker.mqtt.dal.AccountsDao;
+import com.mobius.software.android.iotbroker.mqtt.dal.DaoType;
+import com.mobius.software.android.iotbroker.mqtt.dal.Topics;
+import com.mobius.software.android.iotbroker.mqtt.dal.TopicsDao;
 import com.mobius.software.android.iotbroker.mqtt.managers.NetworkManager;
 import com.mobius.software.android.iotbroker.mqtt.services.NetworkService;
 import com.mobius.software.android.iotbroker.mqtt.utility.MessageDialog;
@@ -52,15 +56,13 @@ public class TopicsListFragment extends Fragment {
 	Dialog dialog;
 	public TextView txtView;
 
-	List<TopicDAO> topicsList;
+	List<Topics> topicsList;
 	TopicsListAdapter topicsListAdapter;
 
 	@Override
-	public View onCreateView(LayoutInflater inflater, ViewGroup container,
-			Bundle savedInstanceState) {
-	
-		return inflater
-				.inflate(R.layout.topics_list_activity, container, false);
+	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+
+		return inflater.inflate(R.layout.topics_list_activity, container, false);
 	}
 
 	@Override
@@ -70,8 +72,7 @@ public class TopicsListFragment extends Fragment {
 		ListView lvMain = (ListView) view.findViewById(R.id.list_view_topics);
 		lvMain.setAdapter(topicsListAdapter);
 
-		LinearLayout btnAddTopic = (LinearLayout) view
-				.findViewById(R.id.add_topic_block);
+		LinearLayout btnAddTopic = (LinearLayout) view.findViewById(R.id.add_topic_block);
 
 		btnAddTopic.setOnClickListener(new View.OnClickListener() {
 			@Override
@@ -84,78 +85,75 @@ public class TopicsListFragment extends Fragment {
 
 	public void showAddTopicDialog() {
 
-		final AlertDialog.Builder ratingdialog = new AlertDialog.Builder(
-				this.getActivity());
+		final AlertDialog.Builder ratingdialog = new AlertDialog.Builder(this.getActivity());
 		ratingdialog.setTitle(R.string.topics_add_dialog_title);
 
-		View linearlayout = getActivity().getLayoutInflater().inflate(
-				R.layout.add_topic_dialog, null);
+		View linearlayout = getActivity().getLayoutInflater().inflate(R.layout.add_topic_dialog, null);
 		ratingdialog.setView(linearlayout);
 
-		final EditText tbxTopics = (EditText) linearlayout
-				.findViewById(R.id.tbx_topics_name);
+		final EditText tbxTopics = (EditText) linearlayout.findViewById(R.id.tbx_topics_name);
 
-		final Spinner spnrQos = (Spinner) linearlayout
-				.findViewById(R.id.spnr_qos);
+		final Spinner spnrQos = (Spinner) linearlayout.findViewById(R.id.spnr_qos);
 
-		ratingdialog.setPositiveButton(R.string.topics_btn_OK,
-				new DialogInterface.OnClickListener() {
-					public void onClick(DialogInterface dialog, int which) {
+		ratingdialog.setPositiveButton(R.string.topics_btn_OK, new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int which) {
 
-						if (!NetworkManager.hasNetworkAccess(getActivity())) {
-							MessageDialog
-									.showMessage(
-											getActivity(),
-											getString(R.string.no_network_error),
-											getString(R.string.no_network_error_message));
-							return;
-						}
+				if (!NetworkManager.hasNetworkAccess(getActivity())) {
+					MessageDialog.showMessage(getActivity(), getString(R.string.no_network_error),
+							getString(R.string.no_network_error_message));
+					return;
+				}
 
-						String topicsName = tbxTopics.getText().toString();
+				String topicsName = tbxTopics.getText().toString();
 
-						if (isEmpty(topicsName)) {
-							MessageDialog
-									.showMessage(
-											getActivity(),
-											getString(R.string.tl_add_topic_error_title),
-											getString(R.string.tl_new_required_field_name));
-							return;
-						}
+				if (isEmpty(topicsName)) {
+					MessageDialog.showMessage(getActivity(), getString(R.string.tl_add_topic_error_title),
+							getString(R.string.tl_new_required_field_name));
+					return;
+				}
 
-						AccountManager accountMngr = new AccountManager(
-								getActivity().getApplicationContext());
-						accountMngr.open();
-						accountMngr.close();
+				String topicsQos = spnrQos.getSelectedItem().toString();
+				int qos = Integer.parseInt(topicsQos);
 
-						String topicsQos = spnrQos.getSelectedItem().toString();
-						int qos = Integer.parseInt(topicsQos);
+				Intent startServiceIntent = new Intent(getActivity(), NetworkService.class);
 
-						NetworkService.subscribe(topicsName, qos);
-						dialog.dismiss();
-					}
-				})
+				startServiceIntent.putExtra(ApplicationSettings.PARAM_TOPIC_NAME, topicsName);
+				startServiceIntent.putExtra(ApplicationSettings.PARAM_QOS, Integer.toString(qos));
 
-		.setNegativeButton(R.string.topics_btn_Cancel,
-				new DialogInterface.OnClickListener() {
-					public void onClick(DialogInterface dialog, int id) {
-						dialog.cancel();
-					}
-				});
+				startServiceIntent.setAction(ApplicationSettings.ACTION_SUBSCRIBE);
+				getActivity().startService(startServiceIntent);
+
+				dialog.dismiss();
+			}
+		})
+
+		.setNegativeButton(R.string.topics_btn_Cancel, new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int id) {
+				dialog.cancel();
+			}
+		});
 
 		ratingdialog.create();
 		ratingdialog.show();
 	}
 
 	private void refresh() {
-		AccountManager accountMngr = new AccountManager(getActivity()
-				.getApplicationContext());
-		accountMngr.open();
-		AccountDAO currAccount = accountMngr.getCurrentAccount();
-		accountMngr.close();
+		AccountsDao accountDao = ((AccountsDao) DaoObject.getDao(getActivity(), DaoType.AccountsDao));
+		List<Accounts> accountsList = accountDao.queryBuilder()
+				.where(com.mobius.software.android.iotbroker.mqtt.dal.AccountsDao.Properties.IsDefault.eq(1)).list();
 
-		TopicsManager topicManager = new TopicsManager(getActivity()
-				.getApplicationContext());
-		topicsList = topicManager.getListByAccountId(currAccount.getId());
+		Accounts currAccount = null;
+
+		if (accountsList != null && accountsList.size() > 0) {
+			currAccount = accountsList.get(0);
+		}
+
+		TopicsDao topicDao = ((TopicsDao) DaoObject.getDao(getActivity(), DaoType.TopicsDao));
+		topicsList = topicDao
+				.queryBuilder()
+				.where(com.mobius.software.android.iotbroker.mqtt.dal.TopicsDao.Properties.AccountID.eq(currAccount
+						.getId())).list();
+
 	}
 
 	public void update() {
@@ -169,5 +167,5 @@ public class TopicsListFragment extends Fragment {
 			return true;
 		else
 			return false;
-	}	
+	}
 }

@@ -24,6 +24,7 @@ import java.util.List;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -32,7 +33,8 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import com.mobius.software.android.iotbroker.mqtt.dal.TopicDAO;
+import com.mobius.software.android.iotbroker.mqtt.base.ApplicationSettings;
+import com.mobius.software.android.iotbroker.mqtt.dal.Topics;
 import com.mobius.software.android.iotbroker.mqtt.services.NetworkService;
 import com.mobius.software.iotbroker.androidclient.R;
 
@@ -42,19 +44,18 @@ public class TopicsListAdapter extends BaseAdapter {
 
 	Context ctx;
 	LayoutInflater lInflater;
-	List<TopicDAO> objects;
+	List<Topics> objects;
 
-	public TopicsListAdapter(Context context, List<TopicDAO> topics) {
+	public TopicsListAdapter(Context context, List<Topics> topics) {
 		ctx = context;
 		objects = topics;
-		lInflater = (LayoutInflater) ctx
-				.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+		lInflater = (LayoutInflater) ctx.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 	}
 
-	public void updateList(List<TopicDAO> topics) {
-		this.objects=topics;
+	public void updateList(List<Topics> topics) {
+		this.objects = topics;
 	}
-	
+
 	@Override
 	public int getCount() {
 		return objects.size();
@@ -78,13 +79,12 @@ public class TopicsListAdapter extends BaseAdapter {
 		final View delete_View = view.findViewById(R.id.delete_block);
 		final View message_View = view.findViewById(R.id.message_layout);
 
-		TopicDAO topic = objects.get(position);
+		Topics topic = objects.get(position);
 		String qosStr = Integer.toString(topic.getQos());
 
 		String qosLine = QOS_TITLE.concat(qosStr);
 		((TextView) view.findViewById(R.id.tbxQos)).setText(qosLine);
-		((TextView) view.findViewById(R.id.tbxTopicsTitle)).setText(topic
-				.getTopicName());
+		((TextView) view.findViewById(R.id.tbxTopicsTitle)).setText(topic.getTopicName());
 
 		Button btn_Cancel = (Button) view.findViewById(R.id.btn_cancel);
 		btn_Cancel.setOnClickListener(new View.OnClickListener() {
@@ -93,26 +93,31 @@ public class TopicsListAdapter extends BaseAdapter {
 				message_View.setVisibility(View.VISIBLE);
 			}
 		});
-		
-	
-		Button btn_delete = (Button) view
-				.findViewById(R.id.btn_delete_topics);
+
+		Button btn_delete = (Button) view.findViewById(R.id.btn_delete_topics);
 		btn_delete.setTag(topic.getId());
 
 		btn_delete.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View v) {
-		
+
 				if (v.getTag() != null) {
 					delete_View.setVisibility(View.GONE);
 					message_View.setVisibility(View.GONE);
-					TopicDAO topic = objects.get(position) ;
-					NetworkService.unsubscribe(topic.getTopicName(), topic.getQos());
+					Topics topic = objects.get(position);
+				
+					Intent startServiceIntent = new Intent(ctx, NetworkService.class);
+
+					startServiceIntent.putExtra(ApplicationSettings.PARAM_TOPIC_NAME, topic.getTopicName());
+					startServiceIntent.putExtra(ApplicationSettings.PARAM_QOS, topic.getQos());
+
+					startServiceIntent.setAction(ApplicationSettings.ACTION_SUBSCRIBE);
+					ctx.startService(startServiceIntent);
+
 				}
 			}
 		});
 
-		LinearLayout delete_Block = (LinearLayout) view
-				.findViewById(R.id.message_layout);
+		LinearLayout delete_Block = (LinearLayout) view.findViewById(R.id.message_layout);
 		delete_Block.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
@@ -125,8 +130,7 @@ public class TopicsListAdapter extends BaseAdapter {
 	}
 
 	@Override
-	public long getItemId(int position) 
-	{
+	public long getItemId(int position) {
 		return position;
 	}
 }

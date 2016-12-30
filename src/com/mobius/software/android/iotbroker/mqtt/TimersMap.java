@@ -22,12 +22,12 @@ package com.mobius.software.android.iotbroker.mqtt;
 
 import java.util.Iterator;
 import java.util.Map;
-import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import com.mobius.software.android.iotbroker.mqtt.managers.ConnectResendTimerTask;
 import com.mobius.software.android.iotbroker.mqtt.managers.MessageResendTimerTask;
-import com.mobius.software.android.iotbroker.mqtt.managers.PingResendTimerTask;
 import com.mobius.software.android.iotbroker.mqtt.net.TCPClient;
+import com.mobius.software.android.iotbroker.mqtt.parser.avps.MessageType;
 import com.mobius.software.android.iotbroker.mqtt.parser.header.api.CountableMessage;
 import com.mobius.software.android.iotbroker.mqtt.parser.header.api.MQMessage;
 import com.mobius.software.android.iotbroker.mqtt.parser.header.impl.Pingreq;
@@ -36,43 +36,66 @@ public class TimersMap {
 	private static final int MAX_VALUE = 65535;
 	private static final int FIRST_ID = 1;
 
-	private TCPClient listener;
-	private long period;
+	private final int MESSAGE_RESEND_PERIOD = 3000;
 
-	private ConcurrentSkipListMap<Integer, MessageResendTimerTask> timersMap = new ConcurrentSkipListMap<Integer, MessageResendTimerTask>();
-	private ConnectResendTimerTask connect;
-	private PingResendTimerTask ping;
+	private TCPClient listener;
+
+	private AtomicInteger currCount = new AtomicInteger(0);
+
+	private ConcurrentHashMap<Integer, MessageResendTimerTask> timersMap = new ConcurrentHashMap<Integer, MessageResendTimerTask>();
+
+	private MessageResendTimerTask connect;
+	private MessageResendTimerTask ping;
+
 	private MqttClient client;
-	
-	public TimersMap(MqttClient client,TCPClient listener, Long period) {
+
+	public TimersMap(MqttClient client, TCPClient listener) {
 		this.listener = listener;
-		this.period = period;
-		this.client=client;
+		this.client = client;
 	}
 
 	public void store(MQMessage message) {
 		MessageResendTimerTask timer = new MessageResendTimerTask(message,
-				listener, this);
-		Integer packetID = (timersMap.isEmpty() || timersMap.lastKey() == MAX_VALUE) ? FIRST_ID
-				: timersMap.lastKey();
+				listener, this, MESSAGE_RESEND_PERIOD);
+
+		Integer packetID = currCount.get();
 		do {
 			if (timersMap.size() == MAX_VALUE)
 				throw new IllegalStateException("outgoing identifier overflow");
 			packetID++;
+			if (packetID == MAX_VALUE)
+				packetID = FIRST_ID;
 		} while (timersMap.putIfAbsent(packetID, timer) != null);
+
 		CountableMessage countable = (CountableMessage) message;
 		countable.setPacketID(packetID);
-		client.executeTimer(timer, period);
+
+		client.executeTimer(timer, MESSAGE_RESEND_PERIOD);
 	}
 
 	public void refreshTimer(MQMessage message) {
-		CountableMessage countable = (CountableMessage) message;
+
+		int period = MESSAGE_RESEND_PERIOD;
+
 		MessageResendTimerTask timer = new MessageResendTimerTask(message,
-				listener, this);
-		MessageResendTimerTask oldTimer = timersMap.put(
-				countable.getPacketID(), timer);
-		if (oldTimer != null)
-			oldTimer.stop();
+				listener, this, period);
+
+		if (message.getType() == MessageType.CONNECT) {
+			connect.stop();
+			connect = timer;
+		} else if (message.getType() == MessageType.PINGREQ) {
+			ping.stop();
+			period = ping.getPeriod() * 1000;
+			ping = new MessageResendTimerTask(message, listener, this, ping.getPeriod());
+		} else {
+			CountableMessage countable = (CountableMessage) message;
+			MessageResendTimerTask oldTimer = timersMap.put(
+					countable.getPacketID(), timer);
+
+			if (oldTimer != null)
+				oldTimer.stop();
+		}
+
 		client.executeTimer(timer, period);
 	}
 
@@ -97,27 +120,28 @@ public class TimersMap {
 		}
 
 		timersMap.clear();
+		currCount.set(0);
 	}
 
 	public void storeConnectTimer(MQMessage message) {
-		ConnectResendTimerTask timer = new ConnectResendTimerTask(message,
-				listener, this);
+		MessageResendTimerTask timer = new MessageResendTimerTask(message,
+				listener, this, MESSAGE_RESEND_PERIOD);
 		if (connect != null)
 			connect.stop();
 
 		connect = timer;
-		client.executeTimer(connect, period);
+		client.executeTimer(connect, MESSAGE_RESEND_PERIOD);
 	}
 
-	public ConnectResendTimerTask stopConnectTimer() {
+	public MessageResendTimerTask stopConnectTimer() {
 		if (connect != null)
 			connect.stop();
 		return connect;
 	}
 
 	public void startPingTimer(int keepalive) {
-		PingResendTimerTask timer = new PingResendTimerTask(new Pingreq(),
-				listener, this, keepalive);
+		MessageResendTimerTask timer = new MessageResendTimerTask(
+				new Pingreq(), listener, this, keepalive);
 		if (ping != null)
 			ping.stop();
 		ping = timer;

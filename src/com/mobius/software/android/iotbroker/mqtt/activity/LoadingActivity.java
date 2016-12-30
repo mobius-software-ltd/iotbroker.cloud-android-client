@@ -20,17 +20,25 @@ package com.mobius.software.android.iotbroker.mqtt.activity;
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
+import java.util.List;
+
 import android.app.Activity;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import com.mobius.software.android.iotbroker.mqtt.dal.AccountManager;
+import com.mobius.software.android.iotbroker.mqtt.base.ApplicationSettings;
+import com.mobius.software.android.iotbroker.mqtt.base.DaoObject;
+import com.mobius.software.android.iotbroker.mqtt.dal.Accounts;
+import com.mobius.software.android.iotbroker.mqtt.dal.AccountsDao;
+import com.mobius.software.android.iotbroker.mqtt.dal.DaoType;
 import com.mobius.software.android.iotbroker.mqtt.listeners.StatusChangedListener;
-import com.mobius.software.android.iotbroker.mqtt.managers.AppBroadcastManager;
 import com.mobius.software.android.iotbroker.mqtt.managers.ConnectionState;
 import com.mobius.software.android.iotbroker.mqtt.managers.NetworkManager;
 import com.mobius.software.android.iotbroker.mqtt.services.NetworkService;
@@ -43,7 +51,10 @@ public class LoadingActivity extends Activity implements StatusChangedListener {
 
 	final int max = 100;
 	TextView tbxLoadingInfo;
-	
+
+	private BroadcastReceiver stReceiver;
+	IntentFilter intFilter;
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -52,19 +63,54 @@ public class LoadingActivity extends Activity implements StatusChangedListener {
 		this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
 				WindowManager.LayoutParams.FLAG_FULLSCREEN);
 		setContentView(R.layout.activity_loading);
-		
+
 		progresLoading = (ProgressBar) findViewById(R.id.loading_progres_bar);
 		progresLoading.setMax(max);
 		progresLoading.setProgress(0);
 
 		tbxLoadingInfo = (TextView) findViewById(R.id.tbx_loading_info);
+
+		stReceiver = new BroadcastReceiver() {
+
+			@Override
+			public void onReceive(Context context, Intent intent) {
+				if (intent.getAction().equalsIgnoreCase(ApplicationSettings.NETWORK_CHANGED)) {
+					String status = intent.getStringExtra("status");
+					statusChanged(Enum.valueOf(ConnectionState.class, status));
+				}
+				else if (intent.getAction().equalsIgnoreCase(ApplicationSettings.NETWORK_UP)) {
+					networkUp();
+				}
+
+				else if (intent.getAction().equals(ApplicationSettings.NETWORK_STATUS_CHANGE)) {
+
+					String status = intent.getStringExtra("status");
+					statusChanged(Enum.valueOf(ConnectionState.class, status));
+				}
+			}
+		};
+
+		intFilter = new IntentFilter(ApplicationSettings.ACTION_MESSAGE_RECEIVED);
+		intFilter.addAction(ApplicationSettings.NETWORK_UP);
+		intFilter.addAction(ApplicationSettings.NETWORK_CHANGED);
+		intFilter.addAction(ApplicationSettings.NETWORK_STATUS_CHANGE);
+
 	}
 
 	@Override
 	public void onResume() {
 		super.onResume();
+		registerReceiver(stReceiver, intFilter);
 		checkState();
 	}
+
+	@Override
+	protected void onPause() {
+		super.onPause();
+
+		unregisterReceiver(stReceiver);
+
+	};
 
 	private void checkState() {
 		ConnectionState currentState = NetworkService.getStatus();
@@ -76,19 +122,18 @@ public class LoadingActivity extends Activity implements StatusChangedListener {
 		Runnable stateRunnable = new StatusChangedRunnable(this, currentState);
 		this.runOnUiThread(stateRunnable);
 	}
-	
+
 	@Override
-	public void onBackPressed() {		
+	public void onBackPressed() {
 		finish();
 	}
-	
+
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		if(resultCode==RESULT_CANCELED)
+		if (resultCode == RESULT_CANCELED)
 			finish();
-		
-		if(!NetworkManager.hasNetworkAccess(this))
-		{
+
+		if (!NetworkManager.hasNetworkAccess(this)) {
 			progresLoading.setProgress(0);
 			infoMessage = getResources().getString(R.string.no_network_access);
 			tbxLoadingInfo.setText(infoMessage);
@@ -99,86 +144,98 @@ public class LoadingActivity extends Activity implements StatusChangedListener {
 		private ConnectionState currentState;
 		private LoadingActivity activity;
 
-		public StatusChangedRunnable(LoadingActivity activity,
-				ConnectionState state) {
+		public StatusChangedRunnable(LoadingActivity activity, ConnectionState state) {
 			this.activity = activity;
 			this.currentState = state;
 		}
 
 		public void run() {
-			if (!NetworkService.hasInstance())
-				startService(new Intent(activity, NetworkService.class));
+			startService(new Intent(activity, NetworkService.class));
 
 			Intent intent = null;
-			Integer requestCode=null;	
-			if(!NetworkManager.hasNetworkAccess(activity))
-			{
+			Integer requestCode = null;
+
+			if (!NetworkManager.hasNetworkAccess(activity)) {
 				progresLoading.setProgress(0);
 				infoMessage = getResources().getString(R.string.no_network_access);
 				tbxLoadingInfo.setText(infoMessage);
 			}
-			else
-			{
+			else {
 				if (currentState == ConnectionState.NONE) {
-					requestCode=1;
+					requestCode = 1;
 					intent = new Intent(activity, LoginActivity.class);
-				} else if (currentState == ConnectionState.CONNECTION_ESTABLISHED) {
-					requestCode=2;
+				}
+				else if (currentState == ConnectionState.CONNECTION_ESTABLISHED) {
+					requestCode = 2;
 					intent = new Intent(activity, TopicsMessagesActivity.class);
 				}
 				else {
+
+					AccountsDao accountDao = ((AccountsDao) DaoObject.getDao(LoadingActivity.this, DaoType.AccountsDao));
+
+					List<Accounts> accountsList = null;
+					Accounts account = null;
+
 					switch (currentState) {
-					case CHANNEL_CREATING:					
+					case CHANNEL_CREATING:
 						progresLoading.setProgress(0);
-						infoMessage = getResources().getString(
-								R.string.loading_creating_channel);
+						infoMessage = getResources().getString(R.string.loading_creating_channel);
 						tbxLoadingInfo.setText(infoMessage);
 						break;
 					case CHANNEL_ESTABLISHED:
 						progresLoading.setProgress(33);
-						infoMessage = getResources().getString(
-								R.string.loading_channel_opened);
+						infoMessage = getResources().getString(R.string.loading_channel_opened);
 						tbxLoadingInfo.setText(infoMessage);
 						break;
 					case CHANNEL_FAILED:
-						AccountManager manager = new AccountManager(activity);
-						manager.open();
-						manager.changeIsDefaultForActiveUser(false);
-						manager.close();
-						
-						requestCode=1;						
-						intent = new Intent(activity, LoginActivity.class);	
+
+						accountsList = accountDao
+								.queryBuilder()
+								.where(com.mobius.software.android.iotbroker.mqtt.dal.AccountsDao.Properties.IsDefault
+										.eq(true)).list();
+
+						if (accountsList != null && accountsList.size() > 0) {
+							account = accountsList.get(0);
+							account.setIsDefault(0);
+							account.update();
+						}
+
+						requestCode = 1;
+						intent = new Intent(activity, LoginActivity.class);
 						intent.putExtra("FAILED", true);
 						break;
 					case CONNECTING:
 						progresLoading.setProgress(66);
-						infoMessage = getResources().getString(
-								R.string.loading_connecting);
+						infoMessage = getResources().getString(R.string.loading_connecting);
 						tbxLoadingInfo.setText(infoMessage);
 						break;
 					case CONNECTION_FAILED:
-						manager = new AccountManager(activity);
-						manager.open();
-						manager.changeIsDefaultForActiveUser(false);
-						manager.close();
-						
-						requestCode=1;
-						intent = new Intent(activity, LoginActivity.class);	
+
+						accountsList = accountDao
+								.queryBuilder()
+								.where(com.mobius.software.android.iotbroker.mqtt.dal.AccountsDao.Properties.IsDefault
+										.eq(true)).list();
+
+						if (accountsList != null && accountsList.size() > 0) {
+							account = accountsList.get(0);
+							account.setIsDefault(0);
+							account.update();
+						}
+
+						requestCode = 1;
+						intent = new Intent(activity, LoginActivity.class);
 						intent.putExtra("FAILED", true);
 						break;
 					case CONNECTION_LOST:
 						progresLoading.setProgress(0);
-						infoMessage = getResources().getString(
-								R.string.loading_connection_lost);
+						infoMessage = getResources().getString(R.string.loading_connection_lost);
 						tbxLoadingInfo.setText(infoMessage);
-						if(NetworkManager.hasNetworkAccess(activity) && !NetworkService.reactivate())
-						{						
-							if (NetworkService.hasInstance())								
-							{
-								requestCode=1;
-								intent = new Intent(activity, LoginActivity.class);	
-								intent.putExtra("FAILED", true);
-							}
+						if (NetworkManager.hasNetworkAccess(activity) && !NetworkService.reactivate()) {
+
+							requestCode = 1;
+							intent = new Intent(activity, LoginActivity.class);
+							intent.putExtra("FAILED", true);
+
 						}
 						break;
 					default:
@@ -186,20 +243,19 @@ public class LoadingActivity extends Activity implements StatusChangedListener {
 					}
 				}
 			}
-			
+
 			if (intent != null) {
-				AppBroadcastManager.setStatusChangedListener(null);
-				startActivityForResult(intent, requestCode);				
-			} else
-				AppBroadcastManager.setStatusChangedListener(activity);
+				startActivityForResult(intent, requestCode);
+			}
+
 		}
 	}
 
 	@Override
 	public void networkUp() {
 		Intent intent = null;
-		int requestCode=1;
+		int requestCode = 1;
 		intent = new Intent(this, LoginActivity.class);
-		startActivityForResult(intent, requestCode);	
-	}	
+		startActivityForResult(intent, requestCode);
+	}
 }

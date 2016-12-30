@@ -20,6 +20,7 @@ package com.mobius.software.android.iotbroker.mqtt.fragments;
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
+import java.util.ArrayList;
 import java.util.List;
 
 import android.app.Fragment;
@@ -30,34 +31,34 @@ import android.view.ViewGroup;
 import android.widget.ListView;
 
 import com.mobius.software.android.iotbroker.mqtt.adapters.MessagesListAdapter;
-import com.mobius.software.android.iotbroker.mqtt.dal.AccountDAO;
-import com.mobius.software.android.iotbroker.mqtt.dal.AccountManager;
-import com.mobius.software.android.iotbroker.mqtt.dal.MessageDAO;
-import com.mobius.software.android.iotbroker.mqtt.dal.MessagesManager;
+import com.mobius.software.android.iotbroker.mqtt.base.DaoObject;
+import com.mobius.software.android.iotbroker.mqtt.dal.Accounts;
+import com.mobius.software.android.iotbroker.mqtt.dal.AccountsDao;
+import com.mobius.software.android.iotbroker.mqtt.dal.AccountsDao.Properties;
+import com.mobius.software.android.iotbroker.mqtt.dal.DaoType;
+import com.mobius.software.android.iotbroker.mqtt.dal.Messages;
+import com.mobius.software.android.iotbroker.mqtt.dal.MessagesDao;
 import com.mobius.software.android.iotbroker.mqtt.managers.NetworkManager;
 import com.mobius.software.android.iotbroker.mqtt.utility.MessageDialog;
 import com.mobius.software.iotbroker.androidclient.R;
 
 public class MessagesListFragment extends Fragment {
 
-	List<MessageDAO> messagesArray;
+	List<Messages> messagesArray;
 
 	MessagesListAdapter messagesAdapter;
 
 	@Override
-	public View onCreateView(LayoutInflater inflater, ViewGroup container,
-			Bundle savedInstanceState) {		
+	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 
-		return inflater.inflate(R.layout.messages_list_activity, container,
-				false);
+		return inflater.inflate(R.layout.messages_list_activity, container, false);
 	}
 
 	@Override
 	public void onViewCreated(View view, Bundle savedInstanceState) {
 
 		refresh();
-		messagesAdapter = new MessagesListAdapter(view.getContext(),
-				messagesArray);
+		messagesAdapter = new MessagesListAdapter(view.getContext(), messagesArray);
 
 		ListView lvMain = (ListView) view.findViewById(R.id.list_messages);
 		lvMain.setAdapter(messagesAdapter);
@@ -65,27 +66,30 @@ public class MessagesListFragment extends Fragment {
 
 	private void refresh() {
 		if (!NetworkManager.hasNetworkAccess(getActivity())) {
-			MessageDialog.showMessage(getActivity(),
-					getString(R.string.no_network_error),
+			MessageDialog.showMessage(getActivity(), getString(R.string.no_network_error),
 					getString(R.string.no_network_error_message));
 			return;
 		}
+		
+		AccountsDao accountDao = ((AccountsDao) DaoObject.getDao(getActivity(), DaoType.AccountsDao));
+		List<Accounts> accountsList = accountDao.queryBuilder().where(Properties.IsDefault.eq(1)).list();
 
-		AccountManager accountMngr = new AccountManager(getActivity()
-				.getApplicationContext());
-		accountMngr.open();
-		AccountDAO currAccount = accountMngr.getCurrentAccount();
-		accountMngr.close();
+		Accounts account = null;
 
-		MessagesManager mesManager = new MessagesManager(getActivity()
-				.getApplicationContext());
-		mesManager.open();
+		if (accountsList != null && accountsList.size() > 0) {
+			account = accountsList.get(0);
+		}
 
-		messagesArray = mesManager.getReverseListByAccount(currAccount.getId());
-		mesManager.close();
+		messagesArray = new ArrayList<Messages>();
+		if (account != null) {
+			MessagesDao messageDao = ((MessagesDao) DaoObject.getDao(getActivity(), DaoType.MessagesDao));
+
+			messagesArray = messageDao.queryBuilder().where(
+					com.mobius.software.android.iotbroker.mqtt.dal.MessagesDao.Properties.AccountID.eq(account.getId())).list();
+		}
 	}
 
-	public void update() {
+	 public void update() {
 		refresh();
 		messagesAdapter.updateList(messagesArray);
 		messagesAdapter.notifyDataSetChanged();

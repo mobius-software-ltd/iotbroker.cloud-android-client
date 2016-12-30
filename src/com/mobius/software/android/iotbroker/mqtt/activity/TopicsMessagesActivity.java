@@ -1,8 +1,14 @@
 package com.mobius.software.android.iotbroker.mqtt.activity;
 
+import java.util.List;
+
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
@@ -12,25 +18,28 @@ import com.actionbarsherlock.app.SherlockActivity;
 import com.actionbarsherlock.view.Menu;
 import com.actionbarsherlock.view.MenuInflater;
 import com.actionbarsherlock.view.MenuItem;
-import com.mobius.software.android.iotbroker.mqtt.dal.AccountManager;
+import com.mobius.software.android.iotbroker.mqtt.base.ApplicationSettings;
+import com.mobius.software.android.iotbroker.mqtt.base.DaoObject;
+import com.mobius.software.android.iotbroker.mqtt.dal.Accounts;
+import com.mobius.software.android.iotbroker.mqtt.dal.AccountsDao;
+import com.mobius.software.android.iotbroker.mqtt.dal.DaoType;
 import com.mobius.software.android.iotbroker.mqtt.fragments.MessagesListFragment;
 import com.mobius.software.android.iotbroker.mqtt.fragments.SendMessageFragment;
 import com.mobius.software.android.iotbroker.mqtt.fragments.TopicsListFragment;
-import com.mobius.software.android.iotbroker.mqtt.listeners.MessageListener;
-import com.mobius.software.android.iotbroker.mqtt.managers.AppBroadcastManager;
 import com.mobius.software.android.iotbroker.mqtt.parser.avps.MessageType;
 import com.mobius.software.android.iotbroker.mqtt.services.NetworkService;
 import com.mobius.software.iotbroker.androidclient.R;
 
-public class TopicsMessagesActivity extends SherlockActivity implements
-		MessageListener {
-
+public class TopicsMessagesActivity extends SherlockActivity {
 
 	private Fragment tlFragment, smFragment, mlFragment;
 	FragmentManager fragmentManager;
 
 	private final String[] TAB_TAGS = new String[] { "tl", "sm", "ml" };
 	private ActionBar actionBar;
+
+	private BroadcastReceiver messagesReceiver;
+	IntentFilter intFilter;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -40,43 +49,75 @@ public class TopicsMessagesActivity extends SherlockActivity implements
 		actionBar = getSupportActionBar();
 		actionBar.setDisplayShowHomeEnabled(true);
 		actionBar.setDisplayShowTitleEnabled(true);
-		
+
 		fragmentManager = getFragmentManager();
 		tlFragment = new TopicsListFragment();
 		smFragment = new SendMessageFragment();
 		mlFragment = new MessagesListFragment();
 		tab_tl_click(findViewById(R.id.fragment_container));
 
+		messagesReceiver = new BroadcastReceiver() {
+
+			@Override
+			public void onReceive(Context context, Intent intent) {
+
+				if (intent.getAction().equals(ApplicationSettings.ACTION_MESSAGE_RECEIVED)) {
+					MessageType messageType = (MessageType) intent
+							.getSerializableExtra(ApplicationSettings.PARAM_MESSAGETYPE);
+					messageReceived(messageType);
+				}
+				else if (intent.getAction().equalsIgnoreCase(ApplicationSettings.NETWORK_DOWN)) {
+					networkDown();
+				}
+
+				else if (intent.getAction().equalsIgnoreCase(ApplicationSettings.NETWORK_CHANGED)) {
+					networkDown();
+				}
+			}
+
+		};
+
+		intFilter = new IntentFilter(ApplicationSettings.ACTION_MESSAGE_RECEIVED);
+
+		intFilter.addAction(ApplicationSettings.NETWORK_DOWN);
+		intFilter.addAction(ApplicationSettings.NETWORK_CHANGED);
+		registerReceiver(messagesReceiver, intFilter);
 	}
 
 	@Override
 	protected void onResume() {
 		super.onResume();
 
-		if (!NetworkService.hasInstance()) {
-			setResult(RESULT_OK);
-			finish();
-			return;
-		}
-		AppBroadcastManager.setMessageListener(this);
+		Intent startServiceIntent = new Intent(TopicsMessagesActivity.this, NetworkService.class);
+		startServiceIntent.putExtra(ApplicationSettings.PARAM_IS_VISIBLE, Boolean.toString(true));
+		startServiceIntent.setAction(ApplicationSettings.ACTION_CHANGE_TMACTIVITY_VISIBLE);
+		startService(startServiceIntent);
+
+		registerReceiver(messagesReceiver, intFilter);
 	}
 
 	@Override
 	protected void onPause() {
 		super.onPause();
-		AppBroadcastManager.setMessageListener(null);
+
+		Intent startServiceIntent = new Intent(TopicsMessagesActivity.this, NetworkService.class);
+		startServiceIntent.putExtra(ApplicationSettings.PARAM_IS_VISIBLE, Boolean.toString(false));
+		startServiceIntent.setAction(ApplicationSettings.ACTION_CHANGE_TMACTIVITY_VISIBLE);
+		startService(startServiceIntent);
+
+		unregisterReceiver(messagesReceiver);
 	}
 
-
-    @Override
-	public boolean onCreateOptionsMenu(Menu menu) {    	
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
 		MenuInflater inflater = getSupportMenuInflater();
-		inflater.inflate(R.menu.topics_list, menu);		
+		inflater.inflate(R.menu.topics_list, menu);
 		return true;
-	}	
+	}
 
 	@Override
 	public void onBackPressed() {
+
 		setResult(RESULT_CANCELED);
 		finish();
 	}
@@ -87,11 +128,21 @@ public class TopicsMessagesActivity extends SherlockActivity implements
 		switch (item.getItemId()) {
 		case R.id.btn_logout:
 
-			NetworkService.deActivateService();
-			AccountManager manager = new AccountManager(this);
-			manager.open();
-			manager.changeIsDefaultForActiveUser(false);
-			manager.close();
+			AccountsDao accountDao = ((AccountsDao) DaoObject.getDao(TopicsMessagesActivity.this, DaoType.AccountsDao));
+			Accounts account;
+			List<Accounts> accountsList = accountDao.queryBuilder()
+					.where(com.mobius.software.android.iotbroker.mqtt.dal.AccountsDao.Properties.IsDefault.eq(1))
+					.list();
+
+			if (accountsList != null && accountsList.size() > 0) {
+				account = accountsList.get(0);
+				account.setIsDefault(0);
+				account.update();
+			}
+
+			Intent startServiceIntent = new Intent(TopicsMessagesActivity.this, NetworkService.class);
+			startServiceIntent.setAction(ApplicationSettings.ACTION_DEACTIVATE_SERVICE);
+			startService(startServiceIntent);
 
 			setResult(RESULT_OK);
 			finish();
@@ -143,9 +194,13 @@ public class TopicsMessagesActivity extends SherlockActivity implements
 
 					}
 				});
-			} else
-				AppBroadcastManager.showNotification(getApplicationContext());
+			}
+			else {
 
+				Intent startServiceIntent = new Intent(TopicsMessagesActivity.this, NetworkService.class);
+				startServiceIntent.setAction(ApplicationSettings.ACTION_SHOW_NOTIFICATION);
+				startService(startServiceIntent);
+			}
 			break;
 		default:
 			break;
@@ -155,10 +210,8 @@ public class TopicsMessagesActivity extends SherlockActivity implements
 
 	public void tab_tl_click(View view) {
 		actionBar.setTitle(R.string.tsm_title_topics_list);
-		FragmentTransaction fragmentTransaction = fragmentManager
-				.beginTransaction();
-		fragmentTransaction.replace(R.id.fragment_container, tlFragment,
-				TAB_TAGS[0]);
+		FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+		fragmentTransaction.replace(R.id.fragment_container, tlFragment, TAB_TAGS[0]);
 		fragmentTransaction.commit();
 
 		changeImageForselectedTab(0);
@@ -166,10 +219,8 @@ public class TopicsMessagesActivity extends SherlockActivity implements
 
 	public void tab_sm_click(View view) {
 		actionBar.setTitle(R.string.tsm_title_send_message);
-		FragmentTransaction fragmentTransaction = fragmentManager
-				.beginTransaction();
-		fragmentTransaction.replace(R.id.fragment_container, smFragment,
-				TAB_TAGS[1]);
+		FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+		fragmentTransaction.replace(R.id.fragment_container, smFragment, TAB_TAGS[1]);
 		fragmentTransaction.commit();
 
 		changeImageForselectedTab(1);
@@ -177,10 +228,8 @@ public class TopicsMessagesActivity extends SherlockActivity implements
 
 	public void tab_ml_click(View view) {
 		actionBar.setTitle(R.string.tsm_title_messages_list);
-		FragmentTransaction fragmentTransaction = fragmentManager
-				.beginTransaction();
-		fragmentTransaction.replace(R.id.fragment_container, mlFragment,
-				TAB_TAGS[2]);
+		FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+		fragmentTransaction.replace(R.id.fragment_container, mlFragment, TAB_TAGS[2]);
 		fragmentTransaction.commit();
 		changeImageForselectedTab(2);
 	}
@@ -193,38 +242,28 @@ public class TopicsMessagesActivity extends SherlockActivity implements
 
 		switch (selectedTabIndex) {
 		case 0: {
-			tbx_tl.setCompoundDrawablesRelativeWithIntrinsicBounds(0,
-					R.drawable.ic_tab_tl_selected, 0, 0);
-			tbx_sm.setCompoundDrawablesRelativeWithIntrinsicBounds(0,
-					R.drawable.ic_tab_sm, 0, 0);
-			tbx_ml.setCompoundDrawablesRelativeWithIntrinsicBounds(0,
-					R.drawable.ic_tab_ml, 0, 0);
+			tbx_tl.setCompoundDrawablesRelativeWithIntrinsicBounds(0, R.drawable.ic_tab_tl_selected, 0, 0);
+			tbx_sm.setCompoundDrawablesRelativeWithIntrinsicBounds(0, R.drawable.ic_tab_sm, 0, 0);
+			tbx_ml.setCompoundDrawablesRelativeWithIntrinsicBounds(0, R.drawable.ic_tab_ml, 0, 0);
 			break;
 		}
 		case 1: {
-			tbx_tl.setCompoundDrawablesRelativeWithIntrinsicBounds(0,
-					R.drawable.ic_tab_tl, 0, 0);
-			tbx_sm.setCompoundDrawablesRelativeWithIntrinsicBounds(0,
-					R.drawable.ic_tab_sm_selected, 0, 0);
-			tbx_ml.setCompoundDrawablesRelativeWithIntrinsicBounds(0,
-					R.drawable.ic_tab_ml, 0, 0);
+			tbx_tl.setCompoundDrawablesRelativeWithIntrinsicBounds(0, R.drawable.ic_tab_tl, 0, 0);
+			tbx_sm.setCompoundDrawablesRelativeWithIntrinsicBounds(0, R.drawable.ic_tab_sm_selected, 0, 0);
+			tbx_ml.setCompoundDrawablesRelativeWithIntrinsicBounds(0, R.drawable.ic_tab_ml, 0, 0);
 			break;
 		}
 		case 2: {
-			tbx_tl.setCompoundDrawablesRelativeWithIntrinsicBounds(0,
-					R.drawable.ic_tab_tl, 0, 0);
-			tbx_sm.setCompoundDrawablesRelativeWithIntrinsicBounds(0,
-					R.drawable.ic_tab_sm, 0, 0);
-			tbx_ml.setCompoundDrawablesRelativeWithIntrinsicBounds(0,
-					R.drawable.ic_tab_ml_selected, 0, 0);
+			tbx_tl.setCompoundDrawablesRelativeWithIntrinsicBounds(0, R.drawable.ic_tab_tl, 0, 0);
+			tbx_sm.setCompoundDrawablesRelativeWithIntrinsicBounds(0, R.drawable.ic_tab_sm, 0, 0);
+			tbx_ml.setCompoundDrawablesRelativeWithIntrinsicBounds(0, R.drawable.ic_tab_ml_selected, 0, 0);
 			break;
 		}
 		}
 
 	}
 
-	@Override
-	public void networkDown() {
+	private void networkDown() {
 		setResult(RESULT_OK);
 		finish();
 	}

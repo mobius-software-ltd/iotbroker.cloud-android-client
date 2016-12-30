@@ -20,9 +20,12 @@ package com.mobius.software.android.iotbroker.mqtt.fragments;
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
+import java.util.List;
+
 import android.app.AlertDialog;
 import android.app.Fragment;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -32,6 +35,14 @@ import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.Switch;
 
+import com.mobius.software.android.iotbroker.mqtt.base.ApplicationSettings;
+import com.mobius.software.android.iotbroker.mqtt.base.DaoObject;
+import com.mobius.software.android.iotbroker.mqtt.dal.Accounts;
+import com.mobius.software.android.iotbroker.mqtt.dal.AccountsDao;
+import com.mobius.software.android.iotbroker.mqtt.dal.DaoType;
+import com.mobius.software.android.iotbroker.mqtt.dal.Messages;
+import com.mobius.software.android.iotbroker.mqtt.dal.MessagesDao;
+import com.mobius.software.android.iotbroker.mqtt.dal.AccountsDao.Properties;
 import com.mobius.software.android.iotbroker.mqtt.managers.NetworkManager;
 import com.mobius.software.android.iotbroker.mqtt.services.NetworkService;
 import com.mobius.software.android.iotbroker.mqtt.utility.MessageDialog;
@@ -48,11 +59,9 @@ public class SendMessageFragment extends Fragment {
 	private EditText tbxInputContent;
 
 	@Override
-	public View onCreateView(LayoutInflater inflater, ViewGroup container,
-			Bundle savedInstanceState) {		
-		
-		return inflater.inflate(R.layout.activity_send_message, container,
-				false);
+	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+
+		return inflater.inflate(R.layout.activity_send_message, container, false);
 	}
 
 	private void cleanSendMessagheForm() {
@@ -61,7 +70,7 @@ public class SendMessageFragment extends Fragment {
 		swtchRetain.setChecked(false);
 		swtchDublicate.setChecked(false);
 		spnrQos.setSelection(0);
-	
+
 		currentContentValue = "";
 	}
 
@@ -75,47 +84,37 @@ public class SendMessageFragment extends Fragment {
 		swtchDublicate = (Switch) view.findViewById(R.id.swtch_dublicate);
 
 		currentContentValue = "";
-		
-		Button btnSendMessage = (Button) view
-				.findViewById(R.id.btn_send_message);
+
+		Button btnSendMessage = (Button) view.findViewById(R.id.btn_send_message);
 		btnSendMessage.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
 
-				String errorTitle = getActivity().getString(
-						R.string.sm_error_dialog_title);
+				String errorTitle = getActivity().getString(R.string.sm_error_dialog_title);
 
 				String content = tbxContent.getText().toString();
 				if (isEmpty(content)) {
-					MessageDialog.showMessage(
-							getActivity(),
-							errorTitle,
-							getActivity().getString(
-									R.string.sm_error_content_required));
+					MessageDialog.showMessage(getActivity(), errorTitle,
+							getActivity().getString(R.string.sm_error_content_required));
 
 					return;
 				}
 
 				String topic = tbxTopic.getText().toString();
 				if (isEmpty(topic)) {
-					MessageDialog.showMessage(
-							getActivity(),
-							errorTitle,
-							getActivity().getString(
-									R.string.sm_error_topic_required));
+					MessageDialog.showMessage(getActivity(), errorTitle,
+							getActivity().getString(R.string.sm_error_topic_required));
 					return;
 				}
 
-				int qos = Integer
-						.parseInt(spnrQos.getSelectedItem().toString());
+				int qos = Integer.parseInt(spnrQos.getSelectedItem().toString());
 
 				String packedId = null;
 
 				boolean isRetain = swtchRetain.isChecked();
 				boolean isDublicate = swtchDublicate.isChecked();
 
-				SendMessage(content, topic, qos, packedId, isRetain,
-						isDublicate);
+				SendMessage(content, topic, qos, packedId, isRetain, isDublicate);
 
 			}
 		});
@@ -127,22 +126,49 @@ public class SendMessageFragment extends Fragment {
 			public void onClick(View v) {
 				showAddContnentDialog();
 			}
-		});	
-	
+		});
+
 	}
 
-	private void SendMessage(String content, String topic, int qos,
-			String packedId, boolean isRetain, boolean isDublicate) {
+	private void SendMessage(String content, String topic, int qos, String packedId, boolean isRetain,
+			boolean isDublicate) {
 
 		if (!NetworkManager.hasNetworkAccess(getActivity())) {
-			MessageDialog.showMessage(getActivity(),
-					getString(R.string.no_network_error),
+			MessageDialog.showMessage(getActivity(), getString(R.string.no_network_error),
 					getString(R.string.no_network_error_message));
 			return;
 		}
 
-		NetworkService.publish(content, topic, qos, packedId, isRetain,
-				isDublicate);
+		AccountsDao accountDao = ((AccountsDao) DaoObject.getDao(getActivity(), DaoType.AccountsDao));
+		List<Accounts> accountsList = accountDao.queryBuilder().where(Properties.IsDefault.eq(1)).list();
+
+		Accounts account = null;
+
+		if (accountsList != null && accountsList.size() > 0) {
+			account = accountsList.get(0);
+		}
+
+		if (account != null) {
+			MessagesDao messageDao = ((MessagesDao) DaoObject.getDao(getActivity(), DaoType.MessagesDao));
+			// isIncoming = false
+			Messages message = new Messages(null, content, qos, 0, topic, account.getId());
+			messageDao.insert(message);
+		}
+
+		Intent startServiceIntent = new Intent(getActivity(), NetworkService.class);
+
+		startServiceIntent.putExtra(ApplicationSettings.PARAM_CONTENT, content);
+		startServiceIntent.putExtra(ApplicationSettings.PARAM_TOPIC, topic);
+		startServiceIntent.putExtra(ApplicationSettings.PARAM_PACKET_ID, packedId);
+		startServiceIntent.putExtra(ApplicationSettings.PARAM_IS_RETAIN, Boolean.toString(isRetain));
+		startServiceIntent.putExtra(ApplicationSettings.PARAM_QOS,Integer.toString(qos));
+		startServiceIntent.putExtra(ApplicationSettings.PARAM_IS_DUBLICATE, Boolean.toString(isDublicate));
+		
+		
+		startServiceIntent.setAction(ApplicationSettings.ACTION_PUBLISH);
+		
+		getActivity().startService(startServiceIntent);
+
 	}
 
 	public static boolean isEmpty(CharSequence str) {
@@ -154,38 +180,32 @@ public class SendMessageFragment extends Fragment {
 
 	public void showAddContnentDialog() {
 
-		final AlertDialog.Builder inputContentDialog = new AlertDialog.Builder(
-				getActivity());
+		final AlertDialog.Builder inputContentDialog = new AlertDialog.Builder(getActivity());
 		inputContentDialog.setTitle(R.string.content_input_dialog_title);
 
-		View linearlayout = getActivity().getLayoutInflater().inflate(
-				R.layout.input_content_dialog, null);
+		View linearlayout = getActivity().getLayoutInflater().inflate(R.layout.input_content_dialog, null);
 
 		inputContentDialog.setView(linearlayout);
 
-		tbxInputContent = (EditText) linearlayout
-				.findViewById(R.id.tbx_content);
+		tbxInputContent = (EditText) linearlayout.findViewById(R.id.tbx_content);
 
 		tbxInputContent.setText(currentContentValue);
 
-		inputContentDialog.setPositiveButton(
-				R.string.content_input_dialog_btn_ok,
+		inputContentDialog.setPositiveButton(R.string.content_input_dialog_btn_ok,
 				new DialogInterface.OnClickListener() {
 					public void onClick(DialogInterface dialog, int which) {
 
-						currentContentValue = tbxInputContent.getText()
-								.toString();
+						currentContentValue = tbxInputContent.getText().toString();
 						tbxContent.setText(currentContentValue);
 						dialog.dismiss();
 					}
 				})
 
-		.setNegativeButton(R.string.content_input_dialog_btn_cancel,
-				new DialogInterface.OnClickListener() {
-					public void onClick(DialogInterface dialog, int id) {
-						dialog.cancel();
-					}
-				});
+		.setNegativeButton(R.string.content_input_dialog_btn_cancel, new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int id) {
+				dialog.cancel();
+			}
+		});
 
 		inputContentDialog.create();
 		inputContentDialog.show();
@@ -196,8 +216,7 @@ public class SendMessageFragment extends Fragment {
 	}
 
 	public void update() {
-		MessageDialog.showMessage(getActivity(),
-				getString(R.string.sm_dialog_mewss_was_subsribed),
+		MessageDialog.showMessage(getActivity(), getString(R.string.sm_dialog_mewss_was_subsribed),
 				getString(R.string.sm_dialog_succes_text));
 
 		cleanSendMessagheForm();

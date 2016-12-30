@@ -29,15 +29,10 @@ import java.util.TimerTask;
 import android.content.Context;
 import android.content.Intent;
 
-import com.mobius.software.android.iotbroker.mqtt.dal.AccountDAO;
-import com.mobius.software.android.iotbroker.mqtt.dal.AccountManager;
-import com.mobius.software.android.iotbroker.mqtt.dal.MessagesManager;
-import com.mobius.software.android.iotbroker.mqtt.dal.TopicDAO;
-import com.mobius.software.android.iotbroker.mqtt.dal.TopicsManager;
+import com.mobius.software.android.iotbroker.mqtt.base.ApplicationSettings;
 import com.mobius.software.android.iotbroker.mqtt.listeners.ClientStateListener;
 import com.mobius.software.android.iotbroker.mqtt.listeners.ConnectionListener;
-import com.mobius.software.android.iotbroker.mqtt.managers.AppBroadcastManager;
-import com.mobius.software.android.iotbroker.mqtt.managers.ConnectResendTimerTask;
+import com.mobius.software.android.iotbroker.mqtt.listeners.DataBaseListener;
 import com.mobius.software.android.iotbroker.mqtt.managers.ConnectionState;
 import com.mobius.software.android.iotbroker.mqtt.managers.ConnectionTimerTask;
 import com.mobius.software.android.iotbroker.mqtt.managers.MessageResendTimerTask;
@@ -59,14 +54,13 @@ import com.mobius.software.android.iotbroker.mqtt.parser.header.impl.Pubrec;
 import com.mobius.software.android.iotbroker.mqtt.parser.header.impl.Pubrel;
 import com.mobius.software.android.iotbroker.mqtt.parser.header.impl.Subscribe;
 import com.mobius.software.android.iotbroker.mqtt.parser.header.impl.Unsubscribe;
+import com.mobius.software.android.iotbroker.mqtt.services.NetworkService;
 
 public class MqttClient implements MQDevice, ConnectionListener {
 
 	public final static String MESSAGETYPE_PARAM = "MESSAGETYPE";
 
-	public static final int SERVER_PORT = 1883;
 	private Integer workerThreads = 4;
-	private final long PERIOD = 3000;
 
 	private InetSocketAddress address;
 	private ConnectionState connectionState;
@@ -82,10 +76,13 @@ public class MqttClient implements MQDevice, ConnectionListener {
 	private Context context;
 	private ClientStateListener listener;
 	private Timer timer = new Timer();
-	
-	public MqttClient(InetSocketAddress address, String username,
-			String password, String clientID, boolean isClean, int keepalive,
-			Will will, Context context) {
+	private ConnectionTimerTask connectionCheckTask;
+
+	private DataBaseListener dbListener;	
+	private static ConnectionState currentState;
+
+	public MqttClient(InetSocketAddress address, String username, String password, String clientID, boolean isClean,
+			int keepalive, Will will, Context context) {
 
 		this.address = address;
 		this.username = username;
@@ -98,37 +95,44 @@ public class MqttClient implements MQDevice, ConnectionListener {
 		client = new TCPClient(address, workerThreads);
 	}
 
-	public void setListener(ClientStateListener listener)
-	{
-		this.listener=listener;
+	public void setListener(ClientStateListener listener) {
+		this.listener = listener;
 	}
-	
-	private void setState(ConnectionState state)
-	{
-		this.connectionState=state;
-		if(this.listener!=null)
-			listener.stateChanged(state);
+
+	public void setDbListener(DataBaseListener dbListener) {
+		this.dbListener = dbListener;
 	}
-	
+
+	private void setState(ConnectionState state) {
+		this.connectionState = state;
+
+		currentState = state;
+
+		Intent startServiceIntent = new Intent(context, NetworkService.class);
+
+		startServiceIntent.putExtra(ApplicationSettings.PARAM_STATE, state.toString());
+		startServiceIntent.setAction(ApplicationSettings.STATE_CHANGED);
+		context.startService(startServiceIntent);
+	}
+
 	public Boolean createChannel() {
-		setState(ConnectionState.CHANNEL_CREATING);		
+		setState(ConnectionState.CHANNEL_CREATING);
 		Boolean isSuccess = client.init(this);
 		if (!isSuccess)
 			setState(ConnectionState.CHANNEL_FAILED);
-		else
-		{
-			ConnectionTimerTask connectionCheckTask = new ConnectionTimerTask(this);
-			executeTimer(connectionCheckTask,ConnectionTimerTask.REFRESH_PERIOD);
+		else {
+			connectionCheckTask = new ConnectionTimerTask(this);
+			executeTimer(connectionCheckTask, ConnectionTimerTask.REFRESH_PERIOD);
 		}
-		
+
 		return isSuccess;
 	}
 
 	public boolean checkCreated() {
-		Boolean isConnected=client.isConnected();
-		if(isConnected && connectionState==ConnectionState.CHANNEL_CREATING)
+		Boolean isConnected = client.isConnected();
+		if (isConnected && connectionState == ConnectionState.CHANNEL_CREATING)
 			setState(ConnectionState.CHANNEL_ESTABLISHED);
-		
+
 		return client.isConnected();
 	}
 
@@ -145,18 +149,20 @@ public class MqttClient implements MQDevice, ConnectionListener {
 	}
 
 	public void connect() {
-		setState(ConnectionState.CONNECTING);		
-		Connect connect = new Connect(username, password, clientID, isClean,
-				keepalive, will);
+		setState(ConnectionState.CONNECTING);
+		Connect connect = new Connect(username, password, clientID, isClean, keepalive, will);
 
 		if (timers != null)
 			timers.stopAllTimers();
+		timers = null;
 
-		timers = new TimersMap(this, client, PERIOD);
-		timers.storeConnectTimer(connect);
+		if (timers == null) {
 
-		if (client.isConnected()) {
-			client.send(connect);
+			timers = new TimersMap(this, client);
+			timers.storeConnectTimer(connect);
+			if (client.isConnected()) {
+				client.send(connect);
+			}
 		}
 	}
 
@@ -164,6 +170,15 @@ public class MqttClient implements MQDevice, ConnectionListener {
 		if (client.isConnected()) {
 			client.send(new Disconnect());
 			client.close();
+
+			if (timers != null)
+				timers.stopAllTimers();
+			timers = null;
+
+			if (connectionCheckTask != null) {
+				connectionCheckTask.cancel();
+			}
+
 		}
 
 		setState(ConnectionState.NONE);
@@ -186,6 +201,7 @@ public class MqttClient implements MQDevice, ConnectionListener {
 		Publish publish = new Publish(topic, content, retain, dup);
 		if (topic.getQos() != QoS.AT_MOST_ONCE)
 			timers.store(publish);
+
 		client.send(publish);
 	}
 
@@ -214,7 +230,8 @@ public class MqttClient implements MQDevice, ConnectionListener {
 	public void packetReceived(MQMessage message) {
 		try {
 			message.processBy(this);
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			e.printStackTrace();
 			client.shutdown();
 		}
@@ -224,13 +241,16 @@ public class MqttClient implements MQDevice, ConnectionListener {
 	public void connectionLost() {
 		if (isClean)
 			clearAccountTopics();
-		setState(ConnectionState.CONNECTION_LOST);		
+		setState(ConnectionState.CONNECTION_LOST);
+
+		if (timers != null)
+			timers.stopAllTimers();
 	}
 
 	@Override
 	public void processConnack(ConnackCode code, boolean sessionPresent) {
-		// CANCEL CONNECT TIMER
-		ConnectResendTimerTask timer = timers.stopConnectTimer();
+
+		MessageResendTimerTask timer = timers.stopConnectTimer();
 
 		// CHECK CODE , IF OK THEN MOVE TO CONNECTED AND NOTIFY NETWORK SESSION
 		if (code == ConnackCode.ACCEPTED) {
@@ -244,9 +264,9 @@ public class MqttClient implements MQDevice, ConnectionListener {
 			}
 
 			timers.startPingTimer(keepalive);
-			// /NetworkService.updateStatus(connectionState);
 
-		} else {
+		}
+		else {
 			// OTHERWISE MOVE TO CONNECT FAILED, STOP CLIENT AND NOTIFY NETWORK
 			// SESION
 			timers.stopAllTimers();
@@ -256,17 +276,7 @@ public class MqttClient implements MQDevice, ConnectionListener {
 	}
 
 	private void clearAccountTopics() {
-		AccountDAO currAccount = retrieveAccount();
-		TopicsManager manager = new TopicsManager(context);
-		manager.deleteByAccountId(currAccount.getId());
-	}
-
-	private AccountDAO retrieveAccount() {
-		AccountManager accountMngr = new AccountManager(context);
-		accountMngr.open();
-		AccountDAO currAccount = accountMngr.getCurrentAccount();
-		accountMngr.close();
-		return currAccount;
+		dbListener.clearTopicByActiveAccount();
 	}
 
 	@Override
@@ -277,7 +287,8 @@ public class MqttClient implements MQDevice, ConnectionListener {
 		for (SubackCode code : codes) {
 			if (code == SubackCode.FAILURE) {
 				throw new CoreLogicException("received invalid message suback");
-			} else {
+			}
+			else {
 				Subscribe subscribe = (Subscribe) timer.retrieveMessage();
 				Topic topic = subscribe.getTopics()[0];
 				QoS expectedQos = topic.getQos();
@@ -286,7 +297,8 @@ public class MqttClient implements MQDevice, ConnectionListener {
 					int qos = expectedQos.getValue();
 					writeTopics(topic.getName().toString(), qos);
 
-				} else {
+				}
+				else {
 
 					int qos = expectedQos.getValue();
 					writeTopics(topic.getName().toString(), qos);
@@ -296,39 +308,30 @@ public class MqttClient implements MQDevice, ConnectionListener {
 	}
 
 	private void writeTopics(String topicName, int qos) {
-
-		TopicsManager manager = new TopicsManager(context);
-
-		AccountDAO currAccount = retrieveAccount();
-		TopicDAO oldTopic = manager.getByName(topicName, currAccount.getId());
-		if (oldTopic != null)
-			manager.update(oldTopic.getId(), topicName, qos,
-					currAccount.getId());
-		else
-			manager.insert(topicName, qos, currAccount.getId());
-
-		sendMessageIntent(MessageType.SUBACK);
-
+		if (dbListener.writeTopics(topicName, qos)) {
+			sendMessageIntent(MessageType.SUBACK);
+		}
 	}
 
 	@Override
 	public void processUnsuback(Integer packetID) {
 		MessageResendTimerTask timer = timers.remove(packetID);
 
-		TopicsManager manager = new TopicsManager(context);
 		if (timer != null) {
 			Unsubscribe unsubscribe = (Unsubscribe) timer.retrieveMessage();
 			Topic[] topics = unsubscribe.getTopics();
-			for (Topic topic : topics)
-				manager.deleteByName(topic.getName(), retrieveAccount().getId());
+
+			for (Topic topic : topics) {
+				dbListener.deleteTopics(topic.getName());
+			}
+
 		}
 
 		sendMessageIntent(MessageType.UNSUBACK);
 	}
 
 	@Override
-	public void processPublish(Integer packetID, Topic topic, byte[] content,
-			boolean retain, boolean isDup) {
+	public void processPublish(Integer packetID, Topic topic, byte[] content, boolean retain, boolean isDup) {
 		QoS publisherQos = topic.getQos();
 		switch (publisherQos) {
 		case AT_LEAST_ONCE:
@@ -344,25 +347,17 @@ public class MqttClient implements MQDevice, ConnectionListener {
 		}
 
 		sendMessageIntent(MessageType.PUBLISH);
-
-		TopicsManager manager = new TopicsManager(context);
-		String topicName = topic.getName().toString();
-
-		AccountDAO account = retrieveAccount();
-		if (!manager.isTopicExist(topicName, account.getId()))
+		if (dbListener.isTopicExist(topic.getName().toString())) {
 			return;
-
-		MessagesManager mesManager = new MessagesManager(context);
-		int qos = publisherQos.getValue();
+		}
 
 		if (!(isDup && publisherQos == QoS.EXACTLY_ONCE)) {
 			String contentMessage = null;
 			try {
 				contentMessage = new String(content, "UTF-8");
-				mesManager.insert(topicName, contentMessage, qos,
-						retrieveAccount().getId());
-
-			} catch (UnsupportedEncodingException e) {
+				dbListener.addMessage(contentMessage, publisherQos.getValue(), 1, topic.getName().toString());
+			}
+			catch (UnsupportedEncodingException e) {
 
 			}
 		}
@@ -424,22 +419,26 @@ public class MqttClient implements MQDevice, ConnectionListener {
 	}
 
 	public void sendMessageIntent(MessageType messageType) {
-		Intent intent = new Intent();
-		intent.putExtra(MESSAGETYPE_PARAM, messageType);
-		intent.setAction(AppBroadcastManager.MESSAGE_STATUS_UPDATED);
 
-		context.sendBroadcast(intent);
+		Intent startServiceIntent = new Intent(context, NetworkService.class);
+
+		startServiceIntent.putExtra(ApplicationSettings.PARAM_MESSAGETYPE, messageType);
+		startServiceIntent.setAction(ApplicationSettings.ACTION_MESSAGE_RECEIVED);
+		context.startService(startServiceIntent);
 	}
-	
-	public void executeTimer(TimerTask task, long period) 
-	{
+
+	public void executeTimer(TimerTask task, long period) {
 		timer.schedule(task, period);
 	}
 
 	@Override
-	public void writeError() 
-	{
-		if(this.listener!=null)
+	public void writeError() {
+		if (this.listener != null)
 			listener.writeError();
-	}	
+	}
+
+	public static ConnectionState currentState() {
+		return currentState;
+	}
+
 }
