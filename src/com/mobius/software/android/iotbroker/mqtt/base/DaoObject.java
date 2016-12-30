@@ -1,4 +1,4 @@
-package com.mobius.software.android.iotbroker.mqtt.dal;
+package com.mobius.software.android.iotbroker.mqtt.base;
 
 /**
  * Mobius Software LTD
@@ -20,51 +20,28 @@ package com.mobius.software.android.iotbroker.mqtt.dal;
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-public class TopicDAO {
-	private int id;
-	private String topicName;
-	private int qos;
-	private int accountId;
+import com.mobius.software.android.iotbroker.mqtt.dal.DaoType;
 
-	public TopicDAO() {
-	}
+import android.content.Context;
 
-	public TopicDAO(int id, String topicName, int qos, int accountId) {
-		this.id = id;
-		this.topicName = topicName;
-		this.qos = qos;
-		this.accountId = accountId;
-	}
 
-	public int getId() {
-		return id;
-	}
+import de.greenrobot.dao.AbstractDao;
 
-	public void setId(int id) {
-		this.id = id;
-	}
-
-	public String getTopicName() {
-		return topicName;
-	}
-
-	public void setTopicName(String topicName) {
-		this.topicName = topicName;
-	}
-
-	public int getQos() {
-		return qos;
-	}
-
-	public void setQos(int qos) {
-		this.qos = qos;
-	}
-
-	public int getAccountId() {
-		return accountId;
-	}
-
-	public void setAccountId(int accountId) {
-		this.accountId = accountId;
+public class DaoObject {
+	public static AbstractDao<?, ?> getDao(Context context, DaoType type ){
+		switch(type)
+		{
+		case  AccountsDao:
+			return (((IotBrokerApplication) context.getApplicationContext()).getDaoSession()).getAccountsDao();
+			
+		case  MessagesDao:
+			return (((IotBrokerApplication) context.getApplicationContext()).getDaoSession()).getMessagesDao();
+			
+		case  TopicsDao:
+			return (((IotBrokerApplication) context.getApplicationContext()).getDaoSession()).getTopicsDao();
+			
+		default :
+			return null;
+		}
 	}
 }
