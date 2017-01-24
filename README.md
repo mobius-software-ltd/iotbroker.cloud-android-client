@@ -34,7 +34,7 @@ The following programs should be installed before starting to clone IoTBroker.Cl
 * **Android SDK**;
 * **Android Development Tools (ADT)**.
 
-### Installing
+### Installation
 
 * First you have to clone **IotBroker.Cloud Android Client**.
 
