@@ -1,0 +1,57 @@
+<LinearLayout xmlns:tools="http://schemas.android.com/tools"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/loading_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/iot_broker_background"
+    android:orientation="vertical"
+    tools:context="com.mobius.software.android.iotbroker.main.activity.LoadingActivity" >
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical|center_horizontal|center"
+        android:layout_weight="8"
+        android:gravity="center_vertical"
+        android:orientation="vertical" >
+
+        <ImageView
+            android:id="@+id/img_logo"
+            android:layout_width="match_parent"
+            android:layout_height="109dp"
+            android:contentDescription="@string/loading_icon_logo_description"
+            android:src="@drawable/ic_loading_icon" />
+
+        <ImageView
+            android:id="@+id/img_logo_text"
+            android:layout_width="match_parent"
+            android:layout_height="32dp"
+            android:contentDescription="@string/loading_icon_text_description"
+            android:src="@drawable/ic_loading_text" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center|center_horizontal"
+        android:layout_weight="2"
+        android:orientation="vertical" >
+
+        <ProgressBar
+            android:id="@+id/loading_progres_bar"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="184dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:max="100" />
+
+        <TextView
+            android:id="@+id/tbx_loading_info"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="@string/loading_progress_loading_page"
+            android:textColor="#838b91" />
+    </LinearLayout>
+
+</LinearLayout>

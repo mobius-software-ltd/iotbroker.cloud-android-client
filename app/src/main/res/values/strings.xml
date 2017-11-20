@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">IOTBroker.Cloud Client</string>
+    <string name="action_settings">An error occurred while connecting to server</string>
+    <string name="title_loginPage">Log In</string>
+    <string name="login_lbl_infoBlock">Registration Info</string>
+    <string name="lbl_protocol_type">Protocol</string>
+    <string name="lbl_user_name">Username</string>
+    <string name="lbl_password">Password</string>
+    <string name="lbl_settings_block">Settings</string>
+    <string name="lbl_client_id">Client ID</string>
+    <string name="lbl_clean_session">Clean Session</string>
+    <string name="lbl_keepalive">Keepalive</string>
+    <string name="lbl_will">Will</string>
+     <string name="lbl_will_topic">Will Topic</string>
+    <string name="lbl_retain">Retain</string>
+    <string name="lbl_qos">Qos</string>
+    <string name="login_button">Log In</string>
+    <string name="img_password_description">user name</string>
+    <string name="loginPageView">Log In</string>
+    <string name="title_activity_loading">Loading</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="loadingpage_description">\u0020</string>
+    <string name="loading_progress_loading_page">Loading&#8230;&#8230;&#8230;</string>
+    <string name="title_activity_topic_messages">TopicMessages</string>
+    <string name="tab_activity_send_message">Send Mesage</string>
+    <string name="tab_activity_topics_List">Topics List</string>
+    <string name="tab_activity_messge_list">Messages List</string>
+    <string name="title_activity_topics_list">TopicsListActivity</string>
+    <string name="title_activity_send_message">SendMessageActivity</string>
+    <string name="title_activity_messages_list">MessagesListActivity</string>
+    <string name="title_activity_topics_send_messages">TopicsSendMessagesActivity</string>
+    <string name="sm_lbl_content">Content</string>
+    <string name="sm_lbl_topic">Topic</string>
+    <string name="sm_lbl_qos">QOS</string>
+    <string name="sm_lbl_packed_id">Packed ID</string>
+    <string name="sm_lbl_retain">Retain </string>
+    <string name="sendmessages_lbl_Dublicate">Dublicate</string>
+    <string name="sm_btn_send">Send</string>
+
+    <string-array name="protocol_type_array">
+        <item>MQTT</item>
+        <item>MQTT-SN</item>
+        <item>CoAP</item>
+        <item>AMQP</item>
+    </string-array>
+
+    <string-array name="qos_array">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+    </string-array>
+
+    <string name="lbl_delete_topics">Delete this topics</string>
+    <string name="lbl_title_topics">Topics List</string>
+    <string name="topics_image_description"></string>
+    <string name="topics_btn_cancel">Cancel</string>
+    <string name="btn_add_topic">Tap here to add new topic</string>
+    <string name="topics_btn_image_description"></string>
+    <string name="topics_add_dialog_title">ADD NEW TOPIC</string>
+    <string name="tp_dialog_lbl_topic_name">Topic name</string>
+    <string name="tp_dialog_lbl_qos">Qos</string>
+    <string name="topics_btn_OK">OK</string>
+    <string name="topics_btn_Cancel">Cancel</string>
+    <string name="messages_list_title">Messages list</string>
+    <string name="loading_creating_channel">creating channel</string>
+    <string name="loading_channel_opened">channel opened</string>
+    <string name="loading_connecting"> connecting</string>
+    <string name="loading_connection_lost">connection lost</string>
+    <string name="server_host">lbl_server_host</string>
+    <string name="lbl_server_host">Server host</string>
+    <string name="title_activity_topics_messages">TopicsMessagesActivity</string>
+    <string name="send_message_qos_description"></string>
+    <string name="sm_content_description"></string>
+    <string name="sm_toipic_description"></string>
+    <string name="sm_qos_description">" "</string>
+    <string name="sm_packet_id_description">" "</string>
+    <string name="sm_retain_description">" "</string>
+    <string name="sm_dublicate_description"></string>
+    <string name="sm_lbl_dublicate">Duplicate</string>
+    <string name="sm__btn_send_text">Send</string>
+    <string name="tsm_title_topics_list">Topics list</string>
+    <string name="tsm_title_send_message">Send message</string>
+    <string name="tsm_title_messages_list">Incomming messages list</string>
+    <string name="bnl_log_out">Log out</string>
+    <string name="tp_btn_log_out">log out</string>
+    <string name="img_protocol_type_description">" "</string>
+    <string name="img_user_name_description">" "</string>
+    <string name="img_client_id_description">" "</string>
+    <string name="img_server_host_description">" "</string>
+    <string name="img_clean_session_description">" "</string>
+    <string name="mg_keep_alive_description">" "</string>
+    <string name="img_will_description">" "</string>
+    <string name="img_will_topic_description">" "</string>
+    <string name="img_qos_description">" "</string>
+    <string name="login_title_log_in">Log In</string>
+    <string name="logout">logout</string>
+    <string name="loading_icon_text_description">" "</string>
+    <string name="loading_icon_logo_description">" "</string>
+    <string name="error_message_Title">Error</string>
+    <string name="error_required_user_name">Username is required field</string>
+    <string name="error_required_password">Password is required field</string>
+    <string name="error_required_client_id">Client ID is required field</string>
+    <string name="error_required_server_host">Server host is required field</string>
+    <string name="connecting_error_title_dialog">Connecting Error</string>
+    <string name="error_opening_channel_title">Error opening channel</string>
+    <string name="error_opening_channel_message">An error occurred while opening channel</string>
+    <string name="sm_error_dialog_title">Error</string>
+    <string name="sm_error_content_required">Content is required field</string>
+    <string name="sm_error_topic_required">Topic is required field</string>
+    <string name="sm_error_qos_required">Qos is required field</string>
+    <string name="sm_error_packed_is_required">Packed ID is required field</string>
+    <string name="tl_add_topic_error_title">Error</string>
+    <string name="tl_new_required_field_name">Topic name is required field</string>
+    <string name="keep_alive_must_more_zero">Keep alive must be more zero</string>
+    <string name="login_curent_keep_alive">10</string>
+    <string name="delete_this_topic_description">delete this topic</string>
+    <string name="tl_delete_this_topic">delete this topic</string>
+    <string name="topic_exist_message">Topic with the specified name already exists. Please enter other name</string>
+    <string name="login_exist_user_name">The system is already a user with that name.</string>
+    <string name="available_accounts">Available accounts</string>
+    <string name="sm_dialog_mewss_was_subsribed">Info</string>
+    <string name="sm_dialog_succes_text">The message was successfully sent</string>
+    <string name="notification_new_message">You have received a new message</string>
+    <string name="notification_message">Message</string>
+    <string name="notification_id">101</string>
+    <string name="content_input_dialog_title">Please input the content text</string>
+    <string name="content_input_dialog_btn_ok">Add</string>
+    <string name="content_input_dialog_btn_cancel">Cancel</string>
+    <string name="will_input_dialog_title">Please input  the will text</string>
+    <string name="will_input_dialog_btn_ok">Add</string>
+    <string name="will_input_dialog_btn_cancel">Cancel</string>
+    <string name="no_network_access">No network access</string>
+    <string name="no_network_error">Network error</string>
+    <string name="no_network_error_message">An error occurred while attempting to contact the server. Please check your internet connection</string>
+    <string name="will_topic_can_not_be_null">Will Topic can not be null</string>
+    <string name="port">Port</string>
+</resources>
