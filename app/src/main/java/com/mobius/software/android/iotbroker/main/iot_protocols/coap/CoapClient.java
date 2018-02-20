@@ -316,9 +316,9 @@ public class CoapClient implements IotProtocol {
                     if (observeOptionValues.size() > 0) {
                         int value = Integer.parseInt(observeOptionValues.get(0));
                         if (value == 0) {
-
+                            sendMessageIntent(MessageType.SUBACK);
                         } else if (value == 1) {
-
+                            sendMessageIntent(MessageType.UNSUBACK);
                         }
                     }
                 } else {
