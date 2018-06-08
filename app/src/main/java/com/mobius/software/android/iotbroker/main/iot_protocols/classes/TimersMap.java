@@ -106,8 +106,8 @@ public class TimersMap {
 		client.executeTimer(timer, period);
 	}
 
-	public MessageResendTimerTask remove(Integer packetID) {
-		MessageResendTimerTask timer = timersMap.remove(packetID);
+	public MessageResendTimerTask remove(long packetID) {
+		MessageResendTimerTask timer = timersMap.remove((int) packetID);
 		if (timer != null)
 			timer.stop();
 		return timer;

@@ -16,8 +16,13 @@
      <string name="lbl_will_topic">Will Topic</string>
     <string name="lbl_retain">Retain</string>
     <string name="lbl_qos">Qos</string>
+    <string name="lbl_security_block">Client security</string>
+    <string name="lbl_secure_connection_topic">Secure connection</string>
+    <string name="lbl_secure_key_topic_label">Security key (optional)</string>
+    <string name="lbl_secure_key_topic">Security key</string>
     <string name="login_button">Log In</string>
     <string name="img_password_description">user name</string>
+    <string name="lbl_key_pass">Key password</string>
     <string name="loginPageView">Log In</string>
     <string name="title_activity_loading">Loading</string>
     <string name="hello_world">Hello world!</string>

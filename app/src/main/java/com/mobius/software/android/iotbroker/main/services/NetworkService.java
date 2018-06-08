@@ -158,7 +158,7 @@ public class NetworkService extends Service implements NetworkStateListener, Cli
 	}
 
 	public Boolean activateService(InetSocketAddress address, Integer protocol, String username, String password, String clientID,
-			boolean isClean, int keepalive, Will will) {
+			boolean isClean, int keepalive, Will will, boolean isSecure, String crtPath, String crtPassword) {
 
 		if (client != null) {
 			client.closeConnection();
@@ -166,13 +166,19 @@ public class NetworkService extends Service implements NetworkStateListener, Cli
 		}
 
 		if (protocol == Protocols.MQTT_PROTOCOL.getValue()) {
-			client = new MqttClient(address, username, password, clientID, isClean, keepalive, will, NetworkService.this);
+			if (isSecure)
+				client = new MqttClient(address, username, password, clientID, isClean, keepalive, will, crtPath, crtPassword, NetworkService.this);
+			else
+				client = new MqttClient(address, username, password, clientID, isClean, keepalive, will, NetworkService.this);
 		} else if (protocol == Protocols.MQTT_SN_PROTOCOL.getValue()) {
 			client = new MqttSnClient(address, username, password, clientID, isClean, keepalive, will, NetworkService.this);
 		} else if (protocol == Protocols.COAP_PROTOCOL.getValue()) {
 			client = new CoapClient(address, username, password, clientID, isClean, keepalive, will, NetworkService.this);
 		} else if (protocol == Protocols.AMQP_PROTOCOL.getValue()) {
-			client = new AmqpClient(address, username, password, clientID, isClean, keepalive, will, NetworkService.this);
+			if (isSecure)
+				client = new AmqpClient(address, username, password, clientID, isClean, keepalive, will, crtPath, crtPassword, NetworkService.this);
+			else
+				client = new AmqpClient(address, username, password, clientID, isClean, keepalive, will, NetworkService.this);
 		}
 
 		client.setListener(instance);

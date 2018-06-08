@@ -68,6 +68,9 @@ public class GreenDaoGenerator {
         accountEntity.addIntProperty("qos");
         accountEntity.addBooleanProperty("isDefault");
         accountEntity.addBooleanProperty("isRetain");
+        accountEntity.addBooleanProperty("isSecureConnection");
+        accountEntity.addStringProperty("certificatePath");
+        accountEntity.addStringProperty("certificatePassword");
 
         Property topicAccountID = topicEntitty.addLongProperty("accountID").notNull().getProperty();
         ToMany topicAccount = accountEntity.addToMany(topicEntitty, topicAccountID);

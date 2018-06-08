@@ -36,7 +36,7 @@ public class CoapHeader extends CountableMessage {
 	private byte version;
 	private CoapType type;
 	private boolean isTokenExist;
-	private int token;
+	private long token;
 	private CoapCode code;
 	private int messageID;
 	private String payload;
@@ -106,11 +106,11 @@ public class CoapHeader extends CountableMessage {
 		isTokenExist = tokenExist;
 	}
 
-	public int getToken() {
+	public long getToken() {
 		return token;
 	}
 
-	public void setToken(int token) {
+	public void setToken(long token) {
 		this.token = token;
 	}
 

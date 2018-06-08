@@ -75,7 +75,7 @@ public class CoapParser extends AbstractParser {
             for (int i = 0; i < tokenValue.length; i++) {
                 value1 = (value1 << 8) + (tokenValue[i] & 0xff);
             }
-            message.setToken((int) value1);
+            message.setToken(value1);
         }
 
         int previousOptionDelta = 0;
@@ -220,7 +220,7 @@ public class CoapParser extends AbstractParser {
                 finalString += extendedLength;
                 finalString += valueForKey;
 
-                previousDelta += delta;
+                previousDelta = key.getType();
             }
         }
 
@@ -239,7 +239,7 @@ public class CoapParser extends AbstractParser {
 
     // private methods
 
-    private String hexStringFrom(int value) {
+    private String hexStringFrom(long value) {
 
         if (value == 0) {
             return "";

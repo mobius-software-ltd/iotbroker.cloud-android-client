@@ -55,10 +55,15 @@ public class ClientInfoParcel implements Parcelable {
     private Boolean isDublicate;
     private Boolean isRetain;
     private String packetId;
+
+    private Boolean isSecure;
+    private String certificatePath;
+    private String certificatePassword;
+
     //private String topicName;
     private ConnectionState connectionState;
 
-    public ClientInfoParcel(Integer protocol, String username, String password, String clientId, String host, Boolean cleanSession, Integer keepalive, Will will, Integer port, Boolean shouldUpdate) {
+    public ClientInfoParcel(Integer protocol, String username, String password, String clientId, String host, Boolean cleanSession, Integer keepalive, Will will, Integer port, Boolean isSecure, String certificatePath, String certificatePassword, Boolean shouldUpdate) {
         this.protocol = Protocols.valueOf(protocol);
         this.username = username;
         this.password = password;
@@ -68,6 +73,9 @@ public class ClientInfoParcel implements Parcelable {
         this.keepalive = keepalive;
         this.will = will;
         this.port = port;
+        this.isSecure = isSecure;
+        this.certificatePath = certificatePath;
+        this.certificatePassword = certificatePassword;
         this.shouldUpdate = shouldUpdate;
     }
 
@@ -163,6 +171,21 @@ public class ClientInfoParcel implements Parcelable {
         if (connectionStateValue != null) {
             connectionState = ConnectionState.valueOf(connectionStateValue);
         }
+
+        Boolean isSecureValue = readBoolean(in);
+        if (isSecureValue != null) {
+            isSecure = isSecureValue;
+        }
+
+        String certificatePathValue = readString(in);
+        if (certificatePathValue != null) {
+            certificatePath = certificatePathValue;
+        }
+
+        String certificatePasswordValue = readString(in);
+        if (certificatePasswordValue != null) {
+            certificatePassword = certificatePasswordValue;
+        }
     }
 
     @Override
@@ -203,6 +226,12 @@ public class ClientInfoParcel implements Parcelable {
             this.writeString(connectionState.toString(), dest);
         } else {
             dest.writeInt(0);
+        }
+
+        this.writeBoolean(isSecure, dest);
+        if (isSecure) {
+            this.writeString(certificatePath, dest);
+            this.writeString(certificatePassword, dest);
         }
     }
 
@@ -445,5 +474,29 @@ public class ClientInfoParcel implements Parcelable {
 
     public void setConnectionState(ConnectionState connectionState) {
         this.connectionState = connectionState;
+    }
+
+    public Boolean getSecure() {
+        return isSecure;
+    }
+
+    public void setSecure(Boolean secure) {
+        isSecure = secure;
+    }
+
+    public String getCertificatePath() {
+        return certificatePath;
+    }
+
+    public void setCertificatePath(String certificatePath) {
+        this.certificatePath = certificatePath;
+    }
+
+    public String getCertificatePassword() {
+        return certificatePassword;
+    }
+
+    public void setCertificatePassword(String certificatePassword) {
+        this.certificatePassword = certificatePassword;
     }
 }

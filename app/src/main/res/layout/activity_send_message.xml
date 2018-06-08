@@ -242,7 +242,7 @@
         android:layout_alignParentBottom="true"
         android:layout_alignParentStart="true"    
         android:background="#19a3dc"
-        android:minHeight="73.33dp"
+        android:minHeight="64dp"
         android:text="@string/sm__btn_send_text"
         android:textColor="#fff"
         android:textStyle="bold" />

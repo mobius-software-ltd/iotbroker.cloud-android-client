@@ -34,9 +34,9 @@ import com.mobius.software.android.iotbroker.main.iot_protocols.amqp.classes.wra
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-public class MessageAnnotations<T> extends AMQPSection {
+public class MessageAnnotations extends AMQPSection {
 
-	private Map<T, Object> annotations;
+	private Map<Object, Object> annotations;
 
 	@Override
 	public TLVAmqp getValue() {
@@ -64,16 +64,16 @@ public class MessageAnnotations<T> extends AMQPSection {
 		return SectionCodes.MESSAGE_ANNOTATIONS;
 	}
 
-	public Map<T, Object> getAnnotations() {
+	public Map<Object, Object> getAnnotations() {
 		return annotations;
 	}
 
 	@SuppressWarnings("unchecked")
-	public void addAnnotation(T key, Object value) {
+	public void addAnnotation(Object key, Object value) {
 		if (annotations == null)
-			annotations = new LinkedHashMap<T, Object>();
+			annotations = new LinkedHashMap<>();
 		if (key instanceof String)
-			annotations.put((T) new AMQPSymbol((String) key), value);
+			annotations.put(new AMQPSymbol((String) key), value);
 		else if (key instanceof BigInteger)
 			annotations.put(key, value);
 		else

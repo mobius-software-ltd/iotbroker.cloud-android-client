@@ -7,7 +7,7 @@
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginBottom="73.33dp">
+        android:layout_marginBottom="64dp">
 
         <LinearLayout
             android:layout_width="fill_parent"
@@ -354,7 +354,7 @@
                         android:layout_width="186dp"
                         android:layout_height="wrap_content"
                         android:layout_gravity="center_vertical|center_horizontal"
-                        android:inputType="text" />
+                        android:inputType="number" />
 
                 </LinearLayout>
 
@@ -365,6 +365,61 @@
 
             </LinearLayout>
             <!-- End port -->
+
+            <!-- Secure connection -->
+            <LinearLayout
+                android:id="@+id/secure_connection_cell"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:id="@+id/content_secure_connection_cell"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="10dp"
+                    android:layout_marginTop="0dp"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:paddingLeft="@dimen/activity_horizontal_margin"
+                    android:paddingRight="@dimen/activity_horizontal_margin">
+
+                    <ImageView
+                        android:id="@+id/img_secure_connection"
+                        android:layout_width="30dp"
+                        android:layout_height="30dp"
+                        android:contentDescription="@string/img_user_name_description"
+                        android:src="@drawable/login_retain" />
+
+                    <TextView
+                        android:id="@+id/lbl_secure_connection"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical|center_horizontal|end"
+                        android:layout_marginStart="16dp"
+                        android:layout_weight="3"
+                        android:labelFor="@+id/swtch_retain"
+                        android:text="@string/lbl_secure_connection_topic" />
+
+                    <Switch
+                        android:id="@+id/swtch_secure_connection"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical|center_horizontal"
+                        android:textColorLink="#4fd262"
+                        android:textStyle="normal" />
+
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#d9e1e3" />
+
+            </LinearLayout>
+            <!-- End Secure connection -->
 
             <!-- Settings -->
             <LinearLayout
@@ -487,7 +542,8 @@
                         android:id="@+id/tbx_keep_alive"
                         android:layout_width="186dp"
                         android:layout_height="wrap_content"
-                        android:layout_gravity="center_vertical|center_horizontal"                        android:inputType="numberDecimal"
+                        android:layout_gravity="center_vertical|center_horizontal"
+                        android:inputType="numberDecimal"
                         android:text="@string/login_curent_keep_alive" />
 
                 </LinearLayout>
@@ -598,7 +654,8 @@
                         android:id="@+id/tbx_will_topic"
                         android:layout_width="186dp"
                         android:layout_height="wrap_content"
-                        android:layout_gravity="center_vertical|center_horizontal"                        android:inputType="textPersonName" />
+                        android:layout_gravity="center_vertical|center_horizontal"
+                        android:inputType="textPersonName" />
 
                 </LinearLayout>
 
@@ -708,12 +765,151 @@
                         android:id="@+id/tbx_qos"
                         android:layout_width="186dp"
                         android:layout_height="wrap_content"
-                        android:layout_gravity="center_vertical|center_horizontal"                        android:entries="@array/qos_array" />
+                        android:layout_gravity="center_vertical|center_horizontal"
+                        android:entries="@array/qos_array" />
 
                 </LinearLayout>
 
             </LinearLayout>
             <!-- End QoS -->
+
+            <!-- Settings -->
+            <LinearLayout
+                android:id="@+id/security_cell"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="#d0d7db"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/tbx_security_block"
+                    android:layout_width="fill_parent"
+                    android:layout_height="fill_parent"
+                    android:layout_marginBottom="10dp"
+                    android:layout_marginStart="10dp"
+                    android:layout_marginTop="10dp"
+                    android:gravity="center_vertical"
+                    android:text="@string/lbl_security_block"
+                    android:textColor="#ffffff"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
+            <!-- End settings -->
+
+            <!-- Secure connection key -->
+            <LinearLayout
+                android:id="@+id/secure_key_cell"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/pressed_button"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:id="@+id/content_secure_key_cell"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="10dp"
+                    android:layout_marginTop="10dp"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:paddingLeft="@dimen/activity_horizontal_margin"
+                    android:paddingRight="@dimen/activity_horizontal_margin">
+
+                    <ImageView
+                        android:id="@+id/img_secure_key"
+                        android:layout_width="30dp"
+                        android:layout_height="30dp"
+                        android:contentDescription="@string/img_user_name_description"
+                        android:src="@drawable/login_retain" />
+
+                    <TextView
+                        android:id="@+id/lbl_secure_key"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical|center_horizontal|end"
+                        android:layout_marginStart="16dp"
+                        android:layout_weight="3"
+                        android:labelFor="@+id/swtch_retain"
+                        android:text="@string/lbl_secure_key_topic" />
+
+                    <EditText
+                        android:id="@+id/edit_secure_key"
+                        android:layout_width="186dp"
+                        android:scrollHorizontally="true"
+                        android:ellipsize="start"
+                        android:singleLine="true"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical|center_horizontal"
+                        android:clickable="false"
+                        android:cursorVisible="false"
+                        android:focusable="false"
+                        android:focusableInTouchMode="false" />
+
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#d9e1e3" />
+
+            </LinearLayout>
+            <!-- End Secure connection key -->
+
+            <!-- Secure connection key pass -->
+            <LinearLayout
+                android:id="@+id/secure_key_pass_cell"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
+                android:layout_marginTop="0dp"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:id="@+id/content_password_pass_cell"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="10dp"
+                    android:layout_marginTop="0dp"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:paddingLeft="@dimen/activity_horizontal_margin"
+                    android:paddingRight="@dimen/activity_horizontal_margin">
+
+                    <ImageView
+                        android:id="@+id/img_key_pass"
+                        android:layout_width="30dp"
+                        android:layout_height="30dp"
+                        android:contentDescription="@string/img_user_name_description"
+                        android:src="@drawable/login_pass" />
+
+                    <TextView
+                        android:id="@+id/lable_key_pass"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical|center_horizontal|end"
+                        android:layout_marginStart="16dp"
+                        android:layout_weight="3"
+                        android:labelFor="@+id/edit_text_key_key"
+                        android:text="@string/lbl_key_pass" />
+
+                    <EditText
+                        android:id="@+id/edit_text_key_key"
+                        android:layout_width="186dp"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical|center_horizontal"
+                        android:inputType="textPassword" />
+
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#d9e1e3" />
+
+            </LinearLayout>
+            <!-- End Secure connection key pass -->
 
         </LinearLayout>
 
@@ -726,9 +922,9 @@
         android:layout_alignParentBottom="true"
         android:layout_alignParentStart="true"
         android:layout_centerHorizontal="true"
-        android:height="73.33dp"
+        android:height="64dp"
         android:background="#19a3dc"
-        android:minHeight="73.33dp"
+        android:minHeight="64dp"
         android:onClick="btn_login_click"
         android:text="@string/login_button"
         android:textColor="#fff"

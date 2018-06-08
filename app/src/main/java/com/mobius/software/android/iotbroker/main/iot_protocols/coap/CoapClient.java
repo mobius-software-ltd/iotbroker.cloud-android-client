@@ -174,12 +174,16 @@ public class CoapClient implements IotProtocol {
 
     public Message getPingreqMessage()
     {
-        return new CoapHeader(CoapCode.PUT, true, false, "");
+        CoapHeader coapMessage = new CoapHeader(CoapCode.PUT, true, true, "");
+        coapMessage.addOption(CoapOptionType.NODE_ID, this.clientID);
+        return coapMessage;
     }
 
     public void subscribe(String topicName, QoS qos) {
 
         CoapHeader coapMessage = new CoapHeader(CoapCode.GET, true, true, "");
+        coapMessage.addOption(CoapOptionType.NODE_ID, this.clientID);
+        coapMessage.addOption(CoapOptionType.ACCEPT, String.valueOf(qos.getValue()));
         coapMessage.addOption(CoapOptionType.OBSERVE, Integer.toString(0));
         coapMessage.addOption(CoapOptionType.URI_PATH, topicName);
         coapMessage.setCoapType(CoapType.CONFIRMABLE);
@@ -189,6 +193,7 @@ public class CoapClient implements IotProtocol {
     public void unsubscribe(String topicName, QoS qos) {
 
         CoapHeader coapMessage = new CoapHeader(CoapCode.GET, true, true, "");
+        coapMessage.addOption(CoapOptionType.NODE_ID, this.clientID);
         coapMessage.addOption(CoapOptionType.OBSERVE, Integer.toString(1));
         coapMessage.addOption(CoapOptionType.URI_PATH, topicName);
         coapMessage.setCoapType(CoapType.CONFIRMABLE);
@@ -197,9 +202,11 @@ public class CoapClient implements IotProtocol {
 
     public void publish(String topicName, QoS qos, byte[] content, boolean retain, boolean dup) {
 
-        CoapHeader header = new CoapHeader(CoapCode.PUT, true, true, new String(content));
-        header.addOption(CoapOptionType.URI_PATH, topicName);
-        client.send(header);
+        CoapHeader coapMessage = new CoapHeader(CoapCode.PUT, true, true, new String(content));
+        coapMessage.addOption(CoapOptionType.NODE_ID, this.clientID);
+        coapMessage.addOption(CoapOptionType.ACCEPT, String.valueOf(qos.getValue()));
+        coapMessage.addOption(CoapOptionType.URI_PATH, topicName);
+        client.send(coapMessage);
     }
 
     public void reinit() {
@@ -277,7 +284,9 @@ public class CoapClient implements IotProtocol {
 
                 }
 
-                CoapHeader ack = new CoapHeader(CoapCode.METHOD_NOT_ALLOWED, false, true, "");
+            } else {
+
+                CoapHeader ack = new CoapHeader(CoapCode.BAD_OPTION, false, true, "");
                 ack.addOption(CoapOptionType.CONTENT_FORMAT, "text/plain");
                 ack.setCoapType(CoapType.ACKNOWLEDGEMENT);
                 ack.setMessageID(message.getMessageID());

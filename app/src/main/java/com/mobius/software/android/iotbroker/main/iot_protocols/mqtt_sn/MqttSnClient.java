@@ -92,7 +92,7 @@ public class MqttSnClient implements IotProtocol {
     private java.util.Timer timer = new java.util.Timer();
     private ConnectionTimerTask connectionCheckTask;
 
-    private SNPublish forPublish;
+    private Map<Integer, SNPublish> listForPublish;
     private Map<Integer, Message> publishPackets;
 
     private DataBaseListener dbListener;
@@ -103,7 +103,8 @@ public class MqttSnClient implements IotProtocol {
     public MqttSnClient(InetSocketAddress address, String username, String password, String clientID, boolean isClean,
                         int keepalive, Will will, Context context) {
 
-        publishPackets = new HashMap<Integer, Message>();
+        this.publishPackets = new HashMap<>();
+        this.listForPublish = new HashMap<>();
 
         this.address = address;
         this.username = username;
@@ -113,7 +114,7 @@ public class MqttSnClient implements IotProtocol {
         this.keepalive = keepalive;
         this.will = will;
         this.context = context;
-        client = new UDPClient(address, workerThreads);
+        this.client = new UDPClient(address, workerThreads);
         this.counter = 0;
     }
 
@@ -232,12 +233,12 @@ public class MqttSnClient implements IotProtocol {
 
         ByteBuf wrappedBuffer = Unpooled.wrappedBuffer(content);
         FullTopic topic = new FullTopic(topicName, qos);
-        forPublish = new SNPublish(0, topic, wrappedBuffer, dup, retain);
 
         if (topic.getQos() != QoS.AT_MOST_ONCE) {
             timers.store(register);
         } else {
             this.counter = ((this.counter + 1) >= 65535) ? 1 : ++this.counter;
+            this.listForPublish.put(this.counter, new SNPublish(this.counter, topic, wrappedBuffer, dup, retain));
             register.setPacketID(this.counter);
         }
         client.send(register);
@@ -376,13 +377,16 @@ public class MqttSnClient implements IotProtocol {
                 timers.remove(regack.getPacketID());
 
                 if (regack.getCode() == ReturnCode.ACCEPTED) {
-                    IdentifierTopic topic = new IdentifierTopic(regack.getTopicID(), forPublish.getTopic().getQos());
-                    forPublish.setPacketID(regack.getPacketID());
-                    forPublish.setTopic(topic);
-                    if (forPublish.getTopic().getQos() != QoS.AT_MOST_ONCE) {
-                        timers.store(forPublish);
+                    SNPublish publish = this.listForPublish.get(regack.getTopicID());
+                    if (publish != null) {
+                        IdentifierTopic topic = new IdentifierTopic(regack.getTopicID(), publish.getTopic().getQos());
+                        publish.setPacketID(regack.getPacketID());
+                        publish.setTopic(topic);
+                        if (publish.getTopic().getQos() != QoS.AT_MOST_ONCE) {
+                            timers.store(publish);
+                        }
+                        client.send(publish);
                     }
-                    client.send(forPublish);
                 }
             } break;
             case PUBLISH:

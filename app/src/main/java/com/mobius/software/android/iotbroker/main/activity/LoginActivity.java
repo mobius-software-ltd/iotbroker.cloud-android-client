@@ -20,62 +20,57 @@ package com.mobius.software.android.iotbroker.main.activity;
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-import java.util.Arrays;
-import java.util.List;
+import android.Manifest;
+import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.pm.PackageManager;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 import android.view.View;
-import java.util.ArrayList;
-import android.os.AsyncTask;
-import android.app.Activity;
-import android.widget.Switch;
-import android.content.Intent;
-import android.widget.Spinner;
-import android.content.Context;
-import android.app.AlertDialog;
-import android.widget.EditText;
-import android.widget.ListView;
 import android.widget.AdapterView;
-import java.net.InetSocketAddress;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
-import android.content.IntentFilter;
-import android.content.DialogInterface;
-import android.content.BroadcastReceiver;
-import de.greenrobot.dao.query.QueryBuilder;
-
-import com.mobius.software.android.iotbroker.main.iot_protocols.amqp.AmqpClient;
-import com.mobius.software.android.iotbroker.main.iot_protocols.amqp.classes.codes.ErrorCodes;
-import com.mobius.software.android.iotbroker.main.iot_protocols.amqp.classes.headeramqp.AMQPClose;
-import com.mobius.software.android.iotbroker.main.iot_protocols.amqp.classes.headeramqp.AMQPDetach;
-import com.mobius.software.android.iotbroker.main.iot_protocols.amqp.classes.headeramqp.AMQPEnd;
-import com.mobius.software.android.iotbroker.main.iot_protocols.amqp.classes.tlv.described.AMQPError;
-import com.mobius.software.android.iotbroker.main.iot_protocols.amqp.parser.AMQPParser;
-import com.mobius.software.android.iotbroker.main.iot_protocols.coap.headercoap.CoapCode;
-import com.mobius.software.android.iotbroker.main.iot_protocols.coap.headercoap.CoapHeader;
-import com.mobius.software.android.iotbroker.main.iot_protocols.coap.parser.CoapParser;
-import com.mobius.software.android.iotbroker.main.net.UDPClient;
-import com.mobius.software.iotbroker.androidclient.R;
 import android.widget.AdapterView.OnItemClickListener;
-import com.mobius.software.android.iotbroker.main.dal.DaoType;
-import com.mobius.software.android.iotbroker.main.dal.Accounts;
-import com.mobius.software.android.iotbroker.main.base.DaoObject;
-import com.mobius.software.android.iotbroker.main.dal.AccountsDao;
-import com.mobius.software.android.iotbroker.main.utility.MessageDialog;
-import com.mobius.software.android.iotbroker.main.base.ClientInfoParcel;
-import com.mobius.software.android.iotbroker.main.services.NetworkService;
-import com.mobius.software.android.iotbroker.main.managers.NetworkManager;
-import com.mobius.software.android.iotbroker.main.base.ApplicationSettings;
-import com.mobius.software.android.iotbroker.main.iot_protocols.classes.QoS;
-import com.mobius.software.android.iotbroker.main.dal.AccountsDao.Properties;
-import com.mobius.software.android.iotbroker.main.adapters.AccountsArrayAdapter;
-import com.mobius.software.android.iotbroker.main.iot_protocols.classes.Protocols;
-import com.mobius.software.android.iotbroker.main.iot_protocols.mqtt.parser.avps.Will;
-import com.mobius.software.android.iotbroker.main.iot_protocols.mqtt.parser.avps.Text;
-import com.mobius.software.android.iotbroker.main.iot_protocols.mqtt.parser.avps.MQTopic;
+import android.widget.CompoundButton;
+import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.ListView;
+import android.widget.Spinner;
+import android.widget.Switch;
 
-public class LoginActivity extends Activity implements AdapterView.OnItemSelectedListener {
+import com.mobius.software.android.iotbroker.main.adapters.AccountsArrayAdapter;
+import com.mobius.software.android.iotbroker.main.base.ApplicationSettings;
+import com.mobius.software.android.iotbroker.main.base.ClientInfoParcel;
+import com.mobius.software.android.iotbroker.main.base.DaoObject;
+import com.mobius.software.android.iotbroker.main.dal.Accounts;
+import com.mobius.software.android.iotbroker.main.dal.AccountsDao;
+import com.mobius.software.android.iotbroker.main.dal.AccountsDao.Properties;
+import com.mobius.software.android.iotbroker.main.dal.DaoType;
+import com.mobius.software.android.iotbroker.main.iot_protocols.classes.Protocols;
+import com.mobius.software.android.iotbroker.main.iot_protocols.classes.QoS;
+import com.mobius.software.android.iotbroker.main.iot_protocols.mqtt.parser.avps.MQTopic;
+import com.mobius.software.android.iotbroker.main.iot_protocols.mqtt.parser.avps.Text;
+import com.mobius.software.android.iotbroker.main.iot_protocols.mqtt.parser.avps.Will;
+import com.mobius.software.android.iotbroker.main.managers.NetworkManager;
+import com.mobius.software.android.iotbroker.main.services.NetworkService;
+import com.mobius.software.android.iotbroker.main.utility.MessageDialog;
+import com.mobius.software.iotbroker.androidclient.R;
+
+import java.io.File;
+import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.List;
+
+import de.greenrobot.dao.query.QueryBuilder;
+import de.mxapplications.openfiledialog.OpenFileDialog;
+
+public class LoginActivity extends Activity implements AdapterView.OnItemSelectedListener, View.OnClickListener, CompoundButton.OnCheckedChangeListener {
 
 	private EditText tbx_will;
 	private String currentWill;
@@ -85,6 +80,10 @@ public class LoginActivity extends Activity implements AdapterView.OnItemSelecte
 	AlertDialog.Builder accountsDialogBuilder;
 	AlertDialog accountDialog;
 
+	private Switch isSecure;
+	private EditText editSecureKey;
+	private LinearLayout secureKeyCell;
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -92,6 +91,17 @@ public class LoginActivity extends Activity implements AdapterView.OnItemSelecte
 
 		Spinner spinnerProtocolType = (Spinner) findViewById(R.id.tbx_protocol_type);
 		spinnerProtocolType.setOnItemSelectedListener(this);
+
+		isSecure = (Switch) findViewById(R.id.swtch_secure_connection);
+		isSecure.setOnCheckedChangeListener(this);
+		findViewById(R.id.security_cell).setVisibility(View.GONE);
+		findViewById(R.id.secure_key_cell).setVisibility(View.GONE);
+		findViewById(R.id.secure_key_pass_cell).setVisibility(View.GONE);
+
+		secureKeyCell = (LinearLayout) findViewById(R.id.secure_key_cell);
+		secureKeyCell.setOnClickListener(this);
+
+		editSecureKey = (EditText) findViewById(R.id.edit_secure_key);
 
 		startServiceReceiver = new BroadcastReceiver() {
 			public void onReceive(Context context, Intent intent) {
@@ -101,7 +111,7 @@ public class LoginActivity extends Activity implements AdapterView.OnItemSelecte
 					ClientInfoParcel clientInfo = intent.getParcelableExtra(ClientInfoParcel.class.getCanonicalName());
 					channelWasCreated(clientInfo.getProtocol().getValue(), clientInfo.getHost(), clientInfo.getUsername(),
 							clientInfo.getPassword(), clientInfo.getClientId(), clientInfo.isCleanSession(), clientInfo.getKeepalive(), clientInfo.getWill(),
-							clientInfo.isShouldUpdate(), clientInfo.getPort());
+							clientInfo.isShouldUpdate(), clientInfo.getPort(), clientInfo.getSecure(), clientInfo.getCertificatePath(), clientInfo.getCertificatePassword());
 				} else if (intent.getAction().equals(ApplicationSettings.ACTION_ERROR_OPENNING_CHANNEL)) {
 					openChanelError();
 				}
@@ -193,7 +203,8 @@ public class LoginActivity extends Activity implements AdapterView.OnItemSelecte
 							choiseAccount.getPassword(), 	choiseAccount.getClientID(), 	choiseAccount.getCleanSession(),
 							choiseAccount.getKeepAlive(), 	choiseAccount.getWillTopic(), 	choiseAccount.getWill(),
 							choiseAccount.getIsRetain(), 	choiseAccount.getQos(), 		true,
-							choiseAccount.getPort());
+							choiseAccount.getPort(), 		choiseAccount.getIsSecureConnection(), choiseAccount.getCertificatePath(),
+							choiseAccount.getCertificatePassword());
 				}
 				accountDialog.dismiss();
 				accountDialog.cancel();
@@ -245,6 +256,9 @@ public class LoginActivity extends Activity implements AdapterView.OnItemSelecte
 		String willTopic = "";
 		boolean isRetain = false;
 		int qos = 0;
+		boolean isSecure = false;
+		String certificatePath = "";
+		String certificatePassword = "";
 
 		final String errorTitle = getString(R.string.error_message_Title);
 
@@ -339,6 +353,21 @@ public class LoginActivity extends Activity implements AdapterView.OnItemSelecte
 			qos = Integer.parseInt(spnrQos.getSelectedItem().toString());
 		}
 
+		if (findViewById(R.id.secure_connection_cell).getVisibility() == View.VISIBLE) {
+			Switch swtrIsSecure = (Switch) findViewById(R.id.swtch_secure_connection);
+			isSecure = swtrIsSecure.isChecked();
+		}
+
+		if (findViewById(R.id.secure_key_cell).getVisibility() == View.VISIBLE) {
+			EditText etCertificatePath = (EditText) findViewById(R.id.edit_secure_key);
+			certificatePath = etCertificatePath.getText().toString();
+		}
+
+		if (findViewById(R.id.secure_key_pass_cell).getVisibility() == View.VISIBLE) {
+			EditText eyCertificatePassword = (EditText) findViewById(R.id.edit_text_key_key);
+			certificatePassword = eyCertificatePassword.getText().toString();
+		}
+
 		if (findViewById(R.id.will_cell).getVisibility() == View.VISIBLE && findViewById(R.id.will_topic_cell).getVisibility() == View.VISIBLE) {
 			if (willMessage.length() > 0 && willTopic.length() == 0) {
 				MessageDialog.showMessage(this, errorTitle, getString(R.string.will_topic_can_not_be_null));
@@ -346,11 +375,12 @@ public class LoginActivity extends Activity implements AdapterView.OnItemSelecte
 			}
 		}
 
-		login(protocolTypeIndex, serverHost, username, password, clientID, isCleanSession, keepAlive, willTopic, willMessage, isRetain, qos, true, currentPort);
+		login(protocolTypeIndex, serverHost, username, password, clientID, isCleanSession, keepAlive, willTopic, willMessage, isRetain, qos, true, currentPort, isSecure, certificatePath, certificatePassword);
 	}
 
 	private void login(int protocol, String serverHost, String username, String password, String clientID, boolean isCleanSession,
-			int keepAlive, String willTopic, String willMessage, boolean isRetain, int qosNumb, Boolean updateAccount, int port) {
+					   int keepAlive, String willTopic, String willMessage, boolean isRetain, int qosNumb, Boolean updateAccount, int port,
+					   boolean isSecure, String crtPath, String crtPassword) {
 
 		if (!NetworkManager.hasNetworkAccess(this)) {
 			MessageDialog.showMessage(this, getString(R.string.no_network_error), getString(R.string.no_network_error_message));
@@ -368,7 +398,7 @@ public class LoginActivity extends Activity implements AdapterView.OnItemSelecte
 			will.setTopic(willTopicData);
 		}
 
-		ConnectThread connectThread = new ConnectThread(this, protocol, serverHost, username, password, clientID, isCleanSession, keepAlive, will, updateAccount, port);
+		ConnectThread connectThread = new ConnectThread(this, protocol, serverHost, username, password, clientID, isCleanSession, keepAlive, will, updateAccount, port, isSecure, crtPath, crtPassword);
 		connectThread.execute(protocol, serverHost, username, password, clientID, isCleanSession, keepAlive, willTopic, willMessage, isRetain, qosNumb, updateAccount, port);
 	}
 
@@ -400,7 +430,8 @@ public class LoginActivity extends Activity implements AdapterView.OnItemSelecte
 	}
 
 	private void channelWasCreated(Integer protocol, String hostname, String username, String userpass,
-			String clientID, Boolean isCleanSession, Integer keepAlive, Will will, Boolean shouldUpdate, int port) {
+								   String clientID, Boolean isCleanSession, Integer keepAlive, Will will, Boolean shouldUpdate, int port,
+								   Boolean isSecure, String certificatePath, String certificatePassword) {
 
 		if (shouldUpdate) {
 			AccountsDao accountDao = ((AccountsDao) DaoObject.getDao(this, DaoType.AccountsDao));
@@ -441,11 +472,10 @@ public class LoginActivity extends Activity implements AdapterView.OnItemSelecte
 				} else {
 					if (will != null) {
 						int qosInt = will.getTopic().getQos().getValue();
-						Accounts looginAccount = new Accounts(null, protocol, username, userpass, clientID, hostname, port, isCleanSession, keepAlive,
-								new String(will.getContent()), will.getTopic().getName().toString(), qosInt, true, will.getRetain());
+						Accounts looginAccount = new Accounts(null, protocol, username, userpass, clientID, hostname, port, isCleanSession, keepAlive, new String(will.getContent()), will.getTopic().getName().toString(), qosInt, true, will.getRetain(), isSecure, certificatePath, certificatePassword);
 						accountDao.insert(looginAccount);
 					} else {
-						Accounts loginAccount = new Accounts(null, protocol, username, userpass, clientID, hostname, port, isCleanSession, keepAlive, null, null, 0, true, false);
+						Accounts loginAccount = new Accounts(null, protocol, username, userpass, clientID, hostname, port, isCleanSession, keepAlive, null, null, 0, true, false, isSecure, certificatePath, certificatePassword);
 						accountDao.insert(loginAccount);
 					}
 				}
@@ -520,14 +550,74 @@ public class LoginActivity extends Activity implements AdapterView.OnItemSelecte
 
 	}
 
+	@Override
+	public void onClick(View v) {
+		if (v.equals(this.secureKeyCell)) {
+			String permission = android.Manifest.permission.READ_EXTERNAL_STORAGE;
+			int res = checkCallingOrSelfPermission(permission);
+			if (res == PackageManager.PERMISSION_GRANTED) {
+				this.showOpenFileDialog();
+			} else {
+				ActivityCompat.requestPermissions(this, new String[]{ Manifest.permission.READ_EXTERNAL_STORAGE }, 1);
+			}
+		}
+	}
+
+	@Override
+	public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+		super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+		if(grantResults[0]== PackageManager.PERMISSION_GRANTED){
+			if (permissions[0].equals(Manifest.permission.READ_EXTERNAL_STORAGE)) {
+				if (grantResults[0] == 0) {
+					this.showOpenFileDialog();
+				}
+			}
+		}
+	}
+
+	private void showOpenFileDialog() {
+		final OpenFileDialog openFileDialog = new OpenFileDialog(this);
+		openFileDialog.setOnCloseListener(new OpenFileDialog.OnCloseListener() {
+			@Override
+			public void onCancel() {
+			}
+			@Override
+			public void onOk(String selectedFile) {
+				try {
+					editSecureKey.setText(selectedFile);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		});
+
+		openFileDialog.test();
+		openFileDialog.setFolderSelectable(true);
+		openFileDialog.show();
+	}
+
+	@Override
+	public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+		if (isChecked) {
+			findViewById(R.id.security_cell).setVisibility(View.VISIBLE);
+			findViewById(R.id.secure_key_cell).setVisibility(View.VISIBLE);
+			findViewById(R.id.secure_key_pass_cell).setVisibility(View.VISIBLE);
+		} else {
+			findViewById(R.id.security_cell).setVisibility(View.GONE);
+			findViewById(R.id.secure_key_cell).setVisibility(View.GONE);
+			findViewById(R.id.secure_key_pass_cell).setVisibility(View.GONE);
+		}
+	}
+
 	private static class ConnectThread extends AsyncTask<Object, Object, Object> {
 		private LoginActivity activity;
 		private ClientInfoParcel clientInfo;
 
 		public ConnectThread(LoginActivity activity, Integer protocol, String serverHost, String username, String password,
-				String clientID, Boolean isCleanSession, Integer keepAlive, Will will, Boolean shouldUpdate, int port) {
+							 String clientID, Boolean isCleanSession, Integer keepAlive, Will will, Boolean shouldUpdate, int port,
+							 boolean isSecure, String crtPath, String crtPassword) {
 			this.activity = activity;
-			this.clientInfo = new ClientInfoParcel(protocol, username, password, clientID, serverHost, isCleanSession, keepAlive, will, port, shouldUpdate);
+			this.clientInfo = new ClientInfoParcel(protocol, username, password, clientID, serverHost, isCleanSession, keepAlive, will, port, isSecure, crtPath, crtPassword, shouldUpdate);
 		}
 
 		@Override

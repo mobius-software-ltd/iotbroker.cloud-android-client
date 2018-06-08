@@ -51,7 +51,8 @@ public class ConnectingTask extends AsyncTask<Object, Object, Object> {
 
         Intent brodcastIntent = new Intent();
         Boolean res = service.activateService(address, clientInfo.getProtocol().getValue(), clientInfo.getUsername(), clientInfo.getPassword(),
-                clientInfo.getClientId(), clientInfo.isCleanSession(), clientInfo.getKeepalive(), clientInfo.getWill());
+                clientInfo.getClientId(), clientInfo.isCleanSession(), clientInfo.getKeepalive(), clientInfo.getWill(), clientInfo.getSecure(),
+                clientInfo.getCertificatePath(), clientInfo.getCertificatePassword());
 
         if (res) {
             brodcastIntent.setAction(ApplicationSettings.ACTION_CHANNEL_CREATING);
