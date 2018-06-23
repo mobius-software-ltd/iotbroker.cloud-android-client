@@ -93,15 +93,7 @@ public class LoginActivity extends Activity implements AdapterView.OnItemSelecte
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_login);
-
-		CoapHeader h = new CoapHeader(CoapCode.CONTENT, true, "hello");
-		h.setToken("34".getBytes());
-		Log.i("TAG", h.toString());
-
-		CoapParser p = new CoapParser();
-		CoapHeader n = (CoapHeader)p.decode(p.encode(h));
-		Log.i("TAG", n.toString());
-
+		
 		Spinner spinnerProtocolType = (Spinner) findViewById(R.id.tbx_protocol_type);
 		spinnerProtocolType.setOnItemSelectedListener(this);
 
