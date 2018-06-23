@@ -54,11 +54,16 @@ import com.mobius.software.android.iotbroker.main.dal.AccountsDao.Properties;
 import com.mobius.software.android.iotbroker.main.dal.DaoType;
 import com.mobius.software.android.iotbroker.main.iot_protocols.classes.Protocols;
 import com.mobius.software.android.iotbroker.main.iot_protocols.classes.QoS;
+import com.mobius.software.android.iotbroker.main.iot_protocols.coap.headercoap.CoapCode;
+import com.mobius.software.android.iotbroker.main.iot_protocols.coap.headercoap.CoapHeader;
+import com.mobius.software.android.iotbroker.main.iot_protocols.coap.headercoap.CoapType;
+import com.mobius.software.android.iotbroker.main.iot_protocols.coap.parser.CoapParser;
 import com.mobius.software.android.iotbroker.main.iot_protocols.mqtt.parser.avps.MQTopic;
 import com.mobius.software.android.iotbroker.main.iot_protocols.mqtt.parser.avps.Text;
 import com.mobius.software.android.iotbroker.main.iot_protocols.mqtt.parser.avps.Will;
 import com.mobius.software.android.iotbroker.main.managers.NetworkManager;
 import com.mobius.software.android.iotbroker.main.services.NetworkService;
+import com.mobius.software.android.iotbroker.main.utility.ConvertorUtil;
 import com.mobius.software.android.iotbroker.main.utility.MessageDialog;
 import com.mobius.software.iotbroker.androidclient.R;
 
@@ -88,6 +93,14 @@ public class LoginActivity extends Activity implements AdapterView.OnItemSelecte
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_login);
+
+		CoapHeader h = new CoapHeader(CoapCode.CONTENT, true, "hello");
+		h.setToken("34".getBytes());
+		Log.i("TAG", h.toString());
+
+		CoapParser p = new CoapParser();
+		CoapHeader n = (CoapHeader)p.decode(p.encode(h));
+		Log.i("TAG", n.toString());
 
 		Spinner spinnerProtocolType = (Spinner) findViewById(R.id.tbx_protocol_type);
 		spinnerProtocolType.setOnItemSelectedListener(this);

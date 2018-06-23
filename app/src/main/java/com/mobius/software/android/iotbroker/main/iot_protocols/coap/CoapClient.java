@@ -33,6 +33,7 @@ import com.mobius.software.android.iotbroker.main.managers.ConnectionTimerTask;
 import com.mobius.software.android.iotbroker.main.net.TCPClient;
 import com.mobius.software.android.iotbroker.main.net.UDPClient;
 import com.mobius.software.android.iotbroker.main.services.NetworkService;
+import com.mobius.software.android.iotbroker.main.utility.ConvertorUtil;
 
 import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
@@ -174,14 +175,14 @@ public class CoapClient implements IotProtocol {
 
     public Message getPingreqMessage()
     {
-        CoapHeader coapMessage = new CoapHeader(CoapCode.PUT, true, true, "");
+        CoapHeader coapMessage = new CoapHeader(CoapCode.PUT, true, "");
         coapMessage.addOption(CoapOptionType.NODE_ID, this.clientID);
         return coapMessage;
     }
 
     public void subscribe(String topicName, QoS qos) {
 
-        CoapHeader coapMessage = new CoapHeader(CoapCode.GET, true, true, "");
+        CoapHeader coapMessage = new CoapHeader(CoapCode.GET, true, "");
         coapMessage.addOption(CoapOptionType.NODE_ID, this.clientID);
         coapMessage.addOption(CoapOptionType.ACCEPT, String.valueOf(qos.getValue()));
         coapMessage.addOption(CoapOptionType.OBSERVE, Integer.toString(0));
@@ -192,7 +193,7 @@ public class CoapClient implements IotProtocol {
 
     public void unsubscribe(String topicName, QoS qos) {
 
-        CoapHeader coapMessage = new CoapHeader(CoapCode.GET, true, true, "");
+        CoapHeader coapMessage = new CoapHeader(CoapCode.GET, true, "");
         coapMessage.addOption(CoapOptionType.NODE_ID, this.clientID);
         coapMessage.addOption(CoapOptionType.OBSERVE, Integer.toString(1));
         coapMessage.addOption(CoapOptionType.URI_PATH, topicName);
@@ -202,7 +203,7 @@ public class CoapClient implements IotProtocol {
 
     public void publish(String topicName, QoS qos, byte[] content, boolean retain, boolean dup) {
 
-        CoapHeader coapMessage = new CoapHeader(CoapCode.PUT, true, true, new String(content));
+        CoapHeader coapMessage = new CoapHeader(CoapCode.PUT, true, new String(content));
         coapMessage.addOption(CoapOptionType.NODE_ID, this.clientID);
         coapMessage.addOption(CoapOptionType.ACCEPT, String.valueOf(qos.getValue()));
         coapMessage.addOption(CoapOptionType.URI_PATH, topicName);
@@ -272,11 +273,9 @@ public class CoapClient implements IotProtocol {
         CoapHeader message = (CoapHeader)coapMessage;
 
         if (message.getType() == CoapCode.POST.getType() || message.getType() == CoapCode.PUT.getType()) {
-            List<String> topicsArray = message.getOptions().get(CoapOptionType.URI_PATH);
-            if (topicsArray != null && topicsArray.size() > 0) {
-                String topic = topicsArray.get(0);
-                byte[] content = message.getPayload().getBytes();
-
+            String topic = message.getOptionValue(CoapOptionType.URI_PATH);
+            if (topic != null && topic.length() > 0) {
+                byte[] content = message.getPayload();
                 try {
                     String contentMessage = new String(content, "UTF-8");
                     dbListener.addMessage(contentMessage, 0, true, topic);
@@ -286,7 +285,7 @@ public class CoapClient implements IotProtocol {
 
             } else {
 
-                CoapHeader ack = new CoapHeader(CoapCode.BAD_OPTION, false, true, "");
+                CoapHeader ack = new CoapHeader(CoapCode.BAD_OPTION, false, "");
                 ack.addOption(CoapOptionType.CONTENT_FORMAT, "text/plain");
                 ack.setCoapType(CoapType.ACKNOWLEDGEMENT);
                 ack.setMessageID(message.getMessageID());
@@ -303,27 +302,24 @@ public class CoapClient implements IotProtocol {
             } break;
             case NON_CONFIRMABLE:
             {
-                timers.remove(message.getToken());
+                timers.remove(ConvertorUtil.byteToInt(message.getToken()));
             } break;
             case ACKNOWLEDGEMENT:
             {
                 if (message.getCode() == CoapCode.CONTENT) {
-                    List<String> topicsArray = message.getOptions().get(CoapOptionType.URI_PATH);
-                    if (topicsArray.size() > 0) {
-                        String topic = topicsArray.get(0);
-                        byte[] content = message.getPayload().getBytes();
-                        try {
-                            String contentMessage = new String(content, "UTF-8");
-                            dbListener.addMessage(contentMessage, 0, true, topic);
-                        } catch (UnsupportedEncodingException e) {
+                    String topic = message.getOptionValue(CoapOptionType.URI_PATH);
+                    byte[] content = message.getPayload();
+                    try {
+                        String contentMessage = new String(content, "UTF-8");
+                        dbListener.addMessage(contentMessage, 0, true, topic);
+                    } catch (UnsupportedEncodingException e) {
 
-                        }
                     }
                 }
                 if (message.getCode() == CoapCode.GET) {
-                    List<String> observeOptionValues = message.getOptions().get(CoapOptionType.OBSERVE);
-                    if (observeOptionValues.size() > 0) {
-                        int value = Integer.parseInt(observeOptionValues.get(0));
+                    String observeOptionValue = message.getOptionValue(CoapOptionType.OBSERVE);
+                    if (observeOptionValue.length() > 0) {
+                        int value = Integer.parseInt(observeOptionValue);
                         if (value == 0) {
                             sendMessageIntent(MessageType.SUBACK);
                         } else if (value == 1) {
@@ -331,8 +327,8 @@ public class CoapClient implements IotProtocol {
                         }
                     }
                 } else {
-                    List<String> topicsArray = message.getOptions().get(CoapOptionType.URI_PATH);
-                    if (topicsArray != null && topicsArray.size() > 0) {
+                    String topic = message.getOptionValue(CoapOptionType.URI_PATH);
+                    if (topic != null && topic.length() > 0) {
                         //String topic = topicsArray.get(0);
                         //byte[] content = ack.getPayload().getBytes();
                         sendMessageIntent(MessageType.PUBACK);
@@ -341,7 +337,7 @@ public class CoapClient implements IotProtocol {
             } break;
             case RESET:
             {
-                timers.remove(message.getToken());
+                timers.remove(ConvertorUtil.byteToInt(message.getToken()));
             } break;
         }
     }

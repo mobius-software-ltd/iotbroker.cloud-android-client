@@ -1,5 +1,6 @@
 package com.mobius.software.android.iotbroker.main.iot_protocols.coap.parser;
 
+import java.lang.reflect.Array;
 import java.util.List;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -8,6 +9,8 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import com.mobius.software.android.iotbroker.main.iot_protocols.classes.Message;
 import com.mobius.software.android.iotbroker.main.iot_protocols.classes.AbstractParser;
+import com.mobius.software.android.iotbroker.main.iot_protocols.coap.clasess.CoapParsingException;
+import com.mobius.software.android.iotbroker.main.iot_protocols.coap.headercoap.CoapOption;
 import com.mobius.software.android.iotbroker.main.iot_protocols.coap.headercoap.CoapType;
 import com.mobius.software.android.iotbroker.main.iot_protocols.coap.headercoap.CoapCode;
 import com.mobius.software.android.iotbroker.main.iot_protocols.coap.headercoap.CoapHeader;
@@ -36,299 +39,172 @@ import com.mobius.software.android.iotbroker.main.iot_protocols.coap.headercoap.
 
 public class CoapParser extends AbstractParser {
 
-    static private int OPTION_13_FAILD_CONSTANT = 13;
-    static private int OPTION_14_FAILD_CONSTANT = 14;
-    static private int OPTION_15_FAILD_CONSTANT = 15;
-
     public ByteBuf next(ByteBuf buf)  {
         return buf;
     }
 
     public Message decode(ByteBuf buf)  {
 
-        CoapHeader message = new CoapHeader();
+        CoapHeader.Builder builder = CoapHeader.builder();
 
-        byte firstByte = buf.readByte();
+        int firstByte = buf.readUnsignedByte();
 
-        byte version = (byte)((firstByte >> 6));
+        int version = firstByte >> 6;
+        if (version != 1)
+            throw new CoapParsingException("Invalid version:" + version);
+        builder.version(version);
 
-        if (version != message.getVersion()) {
-            return null;
+        int typeValue = (firstByte >> 4) & 3;
+        builder.type(CoapType.valueOf(typeValue));
+
+        int tokenLength = firstByte & 0xf;
+        if (tokenLength > 8)
+            throw new CoapParsingException("Invalid token length:" + tokenLength);
+
+        int codeByte = buf.readUnsignedByte();
+        int codeValue = (codeByte >> 5) * 100;
+        codeValue += codeByte & 0x1F;
+        CoapCode code = CoapCode.valueOf(codeValue);
+        if (code == null)
+            throw new CoapParsingException("Unsupported code value:" + codeValue);
+        builder.code(code);
+
+        builder.messageID(buf.readUnsignedShort());
+
+        if (tokenLength > 0)
+        {
+            byte[] token = new byte[tokenLength];
+            buf.readBytes(token, 0, tokenLength);
+            builder.token(token);
         }
 
-        int type = ((firstByte >> 4) & 0x3);
-        message.setCoapType(CoapType.valueOf(type));
+        int number = 0;
 
-        byte tokenLength = (byte)(firstByte & 0xF);
-        message.setTokenExist(tokenLength != 0);
-
-        byte code = buf.readByte();
-        message.setCode(CoapCode.valueOf(code));
-
-        int messageId = buf.readShort();
-        message.setMessageID(messageId);
-
-        if (message.isTokenExist()) {
-            byte[] tokenValue = new byte[tokenLength];
-            buf.readBytes(tokenValue, 0, tokenLength);
-            long value1 = 0;
-            for (int i = 0; i < tokenValue.length; i++) {
-                value1 = (value1 << 8) + (tokenValue[i] & 0xff);
-            }
-            message.setToken(value1);
-        }
-
-        int previousOptionDelta = 0;
-
-        while ((buf.array().length - buf.readableBytes()) < buf.array().length) {
-            byte optionByte = buf.readByte();
-            byte optionDelta = (byte) ((optionByte >> 4) & 0xF);
-            byte optionLength = (byte) (optionByte & 0xF);
-
-            if (optionDelta == OPTION_15_FAILD_CONSTANT) {
-                if (optionLength != OPTION_15_FAILD_CONSTANT) {
-                    return null;
-                }
+        while (buf.isReadable())
+        {
+            int nextByte = buf.readUnsignedByte();
+            if (nextByte == 0xFF)
                 break;
-            }
 
-            int extendedDelta = 0;
-            byte optionIndexOffset = 1;
+            int delta = (nextByte >> 4) & 15;
+            if (delta == 13)
+                delta = buf.readByte() + 13;
+            else if (delta == 14)
+                delta = buf.readShort() + 269;
+            else if (delta > 14)
+                throw new CoapParsingException("Invalid option delta value:" + delta);
 
-            if (optionDelta == OPTION_13_FAILD_CONSTANT) {
-                optionIndexOffset += 1;
-            } else if (optionDelta == OPTION_14_FAILD_CONSTANT) {
-                optionIndexOffset += 2;
-            }
+            number += delta;
 
-            if ((buf.array().length - buf.readableBytes()) + optionIndexOffset <= buf.array().length) {
-                int length = optionIndexOffset - 1;
-                if (length > 0) {
-                    byte[] extendedDeltaBytes = new byte[length];
-                    buf.readBytes(extendedDeltaBytes);
-                    extendedDelta = new BigInteger(extendedDeltaBytes).intValue();
-                }
-            } else {
-                return null;
-            }
+            int optionLength = nextByte & 15;
+            if (optionLength == 13)
+                optionLength = buf.readByte() + 13;
+            else if (optionLength == 14)
+                optionLength = buf.readShort() + 269;
+            else if (optionLength > 14)
+                throw new CoapParsingException("Invalid option length value:" + optionLength);
 
-            int optionLengthExtendedOffsetIndex = optionIndexOffset;
-            if (optionLength == OPTION_13_FAILD_CONSTANT) {
-                optionIndexOffset += 1;
-            } else if (optionLength == OPTION_14_FAILD_CONSTANT) {
-                optionIndexOffset += 2;
-            } else if (optionLength == OPTION_15_FAILD_CONSTANT) {
-                return null;
-            }
+            byte[] optionValue = new byte[optionLength];
+            if (optionLength > 0)
+                buf.readBytes(optionValue, 0, optionLength);
 
-            int length = optionIndexOffset - optionLengthExtendedOffsetIndex;
-            if (length > 0) {
-                byte[] optionLengthBytes = new byte[length];
-                buf.readBytes(optionLengthBytes);
-                optionLength += (byte) ByteBuffer.wrap(optionLengthBytes).getInt();
-            }
-            if ((buf.array().length - buf.readableBytes()) + optionIndexOffset + optionLength > buf.array().length) {
-                return null;
-            }
-
-            int newOptionNumber = optionDelta + extendedDelta + previousOptionDelta;
-
-            byte[] optionValueBytes = new byte[optionLength];
-            buf.readBytes(optionValueBytes, 0, optionLength);
-            String optionValue = new String(optionValueBytes);
-
-            message.addOption(CoapOptionType.valueOf(newOptionNumber), optionValue);
-
-            previousOptionDelta += optionDelta + extendedDelta;
+            builder.option(new CoapOption(number, optionLength, optionValue));
         }
 
-        if (buf.readableBytes() > 0) {
+        if (buf.isReadable())
+        {
             byte[] payload = new byte[buf.readableBytes()];
             buf.readBytes(payload);
-            message.setPayload(new String(payload));
+            builder.payload(payload);
         }
 
-        return message;
+        return builder.build();
     }
 
-    public ByteBuf encode(Message header)  {
+    public ByteBuf encode(CoapHeader message)  {
 
-        CoapHeader message = (CoapHeader)header;
-
-        String finalString = "";
-        String tokenAsString = hexStringFrom(message.getToken());
+        ByteBuf buf = Unpooled.buffer();
 
         byte firstByte = 0;
 
-        firstByte |= (1 << 6);
-        firstByte |= (message.getType() << 4);
-        firstByte |= tokenAsString.length() / 2;
+        firstByte += message.getVersion() << 6;
 
-        finalString += String.format("%02X", firstByte);
-        finalString += String.format("%02X", message.getCode().getType());
-        finalString += String.format("%04X", message.getMessageID());
-        finalString += tokenAsString;
+        firstByte += message.getType() << 4;
 
-        List<CoapOptionType> sortedArray = new ArrayList<CoapOptionType>(message.getOptions().keySet());
+        if (message.getToken() != null)
+            firstByte += message.getToken().length;
 
-        int previousDelta = 0;
+        buf.writeByte(firstByte);
 
-        for (CoapOptionType key: sortedArray) {
-            List<String> value = message.getOptions().get(key);
+        int codeMsb = (message.getCode().getType() / 100);
+        int codeLsb = (byte) (message.getCode().getType() % 100);
+        int codeByte = ((codeMsb << 5) + codeLsb);
+        buf.writeByte(codeByte);
 
-            for (int i = 0; i < value.size(); i++) {
-                int delta = key.getType() - previousDelta;
-                String valueForKey;
+        buf.writeShort(message.getMessageID());
 
-                if (key == CoapOptionType.ETAG || key == CoapOptionType.IF_MATCH) {
-                    valueForKey = value.get(i);
-                } else if (key == CoapOptionType.BLOCK_2 || key == CoapOptionType.URI_PORT ||
-                        key == CoapOptionType.CONTENT_FORMAT || key == CoapOptionType.MAX_AGE ||
-                        key == CoapOptionType.ACCEPT || key == CoapOptionType.SIZE_1 || key == CoapOptionType.SIZE_2 ||
-                        key == CoapOptionType.OBSERVE) {
-                    valueForKey = hexStringFrom(Integer.parseInt(value.get(i)));
-                } else {
-                    valueForKey = hexStringFrom(value.get(i));
-                }
+        if (message.getToken() != null)
+            buf.writeBytes(message.getToken());
 
-                int length = valueForKey.length() / 2;
+        int previousNumber = 0;
+        for (CoapOption option : message.getOptions())
+        {
+            int delta = option.getNumber() - previousNumber;
+            int nextByte = 0;
 
-                String extendedDelta = "";
-                String extendedLength = "";
-
-                if (delta >= 269) {
-                    finalString += String.format("%01X", OPTION_14_FAILD_CONSTANT);
-                    extendedDelta = String.format("%04X", delta - 269);
-                } else if (delta >= OPTION_13_FAILD_CONSTANT) {
-                    finalString += String.format("%01X", OPTION_13_FAILD_CONSTANT);
-                    extendedDelta = String.format("%02X", delta - OPTION_13_FAILD_CONSTANT);
-                } else {
-                    finalString += String.format("%01X", delta);
-                }
-
-                if (length >= 269) {
-                    finalString += String.format("%01X", OPTION_14_FAILD_CONSTANT);
-                    extendedLength = String.format("%04X", length - 269);
-                } else if (length >= OPTION_13_FAILD_CONSTANT) {
-                    finalString += String.format("%01X", OPTION_13_FAILD_CONSTANT);
-                    extendedLength = String.format("%02X", length - OPTION_13_FAILD_CONSTANT);
-                } else {
-                    finalString += String.format("%01X", length);
-                }
-
-                finalString += extendedDelta;
-                finalString += extendedLength;
-                finalString += valueForKey;
-
-                previousDelta = key.getType();
-            }
-        }
-
-        if (message.getPayload().length() > 0) {
-            if (payloadDecodeFor(message)) {
-                finalString += String.format("%02X", 255);
-                finalString += hexStringFrom(message.getPayload());
-            } else {
-                finalString += String.format("%02X", 255);
-                finalString += message.getPayload();
-            }
-        }
-
-        return getHexDataFrom(finalString);
-    }
-
-    // private methods
-
-    private String hexStringFrom(long value) {
-
-        if (value == 0) {
-            return "";
-        } else if (value < 255) {
-            return String.format("%02X", value);
-        } else if (value < 65535) {
-            return String.format("%04X", value);
-        } else if (value < 16777215) {
-            return String.format("%06X", value);
-        } else {
-            return String.format("%08X", value);
-        }
-    }
-
-    private boolean payloadDecodeFor(Message header) {
-
-        CoapHeader message = (CoapHeader)header;
-
-        List<String> list = message.getOptions().get(CoapOptionType.CONTENT_FORMAT);
-
-        if (list == null) {
-            return true;
-        } else {
-            boolean plain = Integer.parseInt(list.get(0)) == CoapContentFormat.PLAIN_CONTENT_FORMAT.getType();
-            boolean link = Integer.parseInt(list.get(0)) == CoapContentFormat.LINK_CONTENT_FORMAT.getType();
-            boolean xml = Integer.parseInt(list.get(0)) == CoapContentFormat.XML_CONTENT_FORMAT.getType();
-            boolean json = Integer.parseInt(list.get(0)) == CoapContentFormat.JSON_CONTENT_FORMAT.getType();
-            if (plain || link || xml || json) {
-                return  true;
-            }
-        }
-        return false;
-    }
-
-    public ByteBuf getHexDataFrom(String string) {
-
-        if(string.length() % 2 != 0)
-            return null;
-
-        byte[] result = new byte[string.length() / 2];
-        for(int i = 0; i<result.length; i++) {
-            char currChar = string.charAt(i * 2);
-            int highValue, lowValue;
-
-            if(currChar >= 'A' && currChar <= 'F')
-                highValue = ((currChar - 'A' + 10) << 4);
-            else if (currChar >= 'a' && currChar <= 'f')
-                highValue = ((currChar-'a'+10)<<4);
-            else if (currChar >= '0' && currChar <= '9')
-                highValue = ((currChar-'0') << 4);
+            Integer extendedDelta = null;
+            if (delta < 13)
+                nextByte += delta << 4;
             else
-                return null;
+            {
+                extendedDelta = delta;
+                if (delta < 0xFF)
+                    nextByte = 13 << 4;
+                else
+                    nextByte = 14 << 4;
+            }
 
-            currChar = string.charAt(i * 2 + 1);
-            if (currChar >= 'A' && currChar <= 'F')
-                lowValue = (currChar - 'A'+10);
-            else if (currChar >= 'a' && currChar <= 'f')
-                lowValue = (currChar - 'a'+10);
-            else if (currChar >= '0' && currChar <= '9')
-                lowValue = (currChar - '0');
+            Integer extendedLength = null;
+            if (option.getLength() < 13)
+                nextByte += option.getLength();
             else
-                return null;
+            {
+                extendedLength = option.getLength();
+                if (option.getLength() < 0xFF)
+                    nextByte += 13;
+                else
+                    nextByte += 14;
+            }
 
-            result[i] = (byte)((highValue & 0xF0) | (lowValue & 0x0F));
+            buf.writeByte(nextByte);
+            if (extendedDelta != null)
+            {
+                if (extendedDelta < 0xFF)
+                    buf.writeByte(extendedDelta - 13);
+                else
+                    buf.writeShort(extendedDelta - 269);
+            }
+
+            if (extendedLength != null)
+            {
+                if (extendedLength < 0xFF)
+                    buf.writeByte(extendedLength - 13);
+                else
+                    buf.writeShort(extendedLength - 269);
+            }
+
+            buf.writeBytes(option.getValue());
+            previousNumber = option.getNumber();
         }
 
-        return Unpooled.wrappedBuffer(result);
+        buf.writeByte((byte) 0xFF);
+
+        if (message.getPayload() != null && message.getPayload().length > 0)
+            buf.writeBytes(message.getPayload());
+
+        return buf;
     }
 
-    public static String bytesToHex(byte[] bytes) {
-        char[] hexArray = "0123456789ABCDEF".toCharArray();
-        char[] hexChars = new char[bytes.length * 2];
-        for (int j = 0; j < bytes.length; j++) {
-            int v = bytes[j] & 0xFF;
-            hexChars[j * 2 + 1] = hexArray[v & 0x0F];
-            hexChars[j * 2] = hexArray[v >>> 4];
-        }
 
-        return new String(hexChars);
-    }
 
-    private String hexStringFrom(String string) {
-        byte[] bytes = bytesToHex(string.getBytes()).getBytes();
-        return this.stringFromDataWithHex(bytes);
-    }
-
-    private String stringFromDataWithHex(byte[] bytes) {
-        String result = new String(bytes).replaceAll("\\s+","");
-        //result = result.toLowerCase();
-        return result;
-    }
 }
