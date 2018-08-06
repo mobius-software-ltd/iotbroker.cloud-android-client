@@ -89,7 +89,7 @@ public class Connect implements Message
 		this.protocolLevel = (byte) protocolLevel;
 	}
 
-	public boolean isClean()
+	public boolean isCleanSession()
 	{
 		return cleanSession;
 	}
@@ -114,12 +114,12 @@ public class Connect implements Message
 		this.will = will;
 	}
 
-	public int getKeepAlive()
+	public int getKeepalive()
 	{
 		return keepalive;
 	}
 
-	public void setKeepAlive(int keepAlive)
+	public void setKeepalive(int keepAlive)
 	{
 		this.keepalive = keepAlive;
 	}
@@ -134,7 +134,7 @@ public class Connect implements Message
 		this.clientID = clientID;
 	}
 
-	public String getUserName()
+	public String getUsername()
 	{
 		return username;
 	}
@@ -164,7 +164,7 @@ public class Connect implements Message
 		return password != null;
 	}
 
-	public String getName()
+	public String getProtocolName()
 	{
 		return PROTOCOL_NAME;
 	}

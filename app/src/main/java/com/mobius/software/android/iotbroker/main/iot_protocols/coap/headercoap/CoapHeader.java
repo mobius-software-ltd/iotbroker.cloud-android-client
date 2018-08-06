@@ -75,13 +75,13 @@ public class CoapHeader extends CountableMessage {
 		this.payload = payload.getBytes();
 	}
 
-    public static Builder builder() {
-        return new Builder();
-    }
-
 	public void addOption(CoapOptionType option, String value) {
 		this.options.add(new CoapOption(option.getType(), value.length(), value.getBytes()));
 	}
+
+    public void addOption(CoapOption option) {
+        this.options.add(option);
+    }
 
 	public String getOptionValue(CoapOptionType option) {
         for (int i = 0; i < this.options.size(); i++) {
@@ -117,7 +117,11 @@ public class CoapHeader extends CountableMessage {
 		return version;
 	}
 
-	public CoapType getCoapType() {
+    public void setVersion(Integer version) {
+        this.version = version;
+    }
+
+    public CoapType getCoapType() {
 		return type;
 	}
 
@@ -168,187 +172,5 @@ public class CoapHeader extends CountableMessage {
 		this.token = ConvertorUtil.intToByte(packetID);
 		this.packetID = packetID;
 	}
-
-    public static class Builder
-    {
-        private Integer version = 1;
-        private CoapType type;
-        private CoapCode code;
-        private Integer messageID;
-        private byte[] token;
-        private List<CoapOption> options = new ArrayList<>();
-        private byte[] payload;
-        private CoapOptionsComparator comparator=new CoapOptionsComparator();
-
-        public CoapHeader build()
-        {
-            Collections.sort(options,comparator);
-            return new CoapHeader(version, type, code, messageID, token, options, payload);
-        }
-
-        public Builder version(Integer version)
-        {
-            this.version = version;
-            return this;
-        }
-
-        public Builder type(CoapType type)
-        {
-            this.type = type;
-            return this;
-        }
-
-        public Builder code(CoapCode code)
-        {
-            this.code = code;
-            return this;
-        }
-
-        public Builder messageID(Integer messageID)
-        {
-            this.messageID = messageID;
-            return this;
-        }
-
-        public Builder token(byte[] token)
-        {
-            this.token = token;
-            return this;
-        }
-
-        public Builder option(CoapOption option)
-        {
-            this.options.add(option);
-            return this;
-        }
-
-        public Builder option(CoapOptionType type, Object value)
-        {
-            this.options.add(OptionParser.encode(type, value));
-            return this;
-        }
-
-        public Builder payload(byte[] payload)
-        {
-            this.payload = payload;
-            return this;
-        }
-    }
-
-    public class Options
-    {
-        public Integer fetchAccept()
-        {
-            Short value = fetchSingleValue(CoapOptionType.ACCEPT, Short.class);
-            return value != null ? value.intValue() : null;
-        }
-
-        public Integer fetchUriPort()
-        {
-            Short value = fetchSingleValue(CoapOptionType.URI_PORT, Short.class);
-            return value != null ? value.intValue() : null;
-        }
-
-        public Integer fetchContentFormat()
-        {
-            Short value = fetchSingleValue(CoapOptionType.CONTENT_FORMAT, Short.class);
-            return value != null ? value.intValue() : null;
-        }
-
-        public Integer fetchMaxAge()
-        {
-            return fetchSingleValue(CoapOptionType.MAX_AGE, Integer.class);
-        }
-
-        public Integer fetchSize1()
-        {
-            return fetchSingleValue(CoapOptionType.SIZE_1, Integer.class);
-        }
-
-        public Integer fetchObserve()
-        {
-            return fetchSingleValue(CoapOptionType.OBSERVE, Integer.class);
-        }
-
-        public boolean fetchIfNoneMatch()
-        {
-            return fetchSingleValue(CoapOptionType.IF_NONE_MATCH, byte[].class) != null;
-        }
-
-        public String fetchNodeID()
-        {
-            return fetchSingleValue(CoapOptionType.NODE_ID, String.class);
-        }
-
-        public String fetchIfMatch()
-        {
-            return fetchSingleValue(CoapOptionType.IF_MATCH, String.class);
-        }
-
-        public String fetchUriHost()
-        {
-            return fetchSingleValue(CoapOptionType.URI_HOST, String.class);
-        }
-
-        public String fetchEtag()
-        {
-            return fetchSingleValue(CoapOptionType.ETAG, String.class);
-        }
-
-        public String fetchUriPath()
-        {
-            return fetchSingleValue(CoapOptionType.URI_PATH, String.class);
-        }
-
-        public String fetchLocationPath()
-        {
-            return fetchSingleValue(CoapOptionType.LOCATION_PATH, String.class);
-        }
-
-        public String fetchUriQuery()
-        {
-            return fetchSingleValue(CoapOptionType.URI_QUERY, String.class);
-        }
-
-        public String fetchLocationQuery()
-        {
-            return fetchSingleValue(CoapOptionType.LOCATION_QUERY, String.class);
-        }
-
-        public String fetchProxyScheme()
-        {
-            return fetchSingleValue(CoapOptionType.PROXY_SCHEME, String.class);
-        }
-
-        public String fetchProxyUri()
-        {
-            return fetchSingleValue(CoapOptionType.PROXY_URI, String.class);
-        }
-
-        private <T> T fetchSingleValue(CoapOptionType targetType, Class<T> expectedClazz)
-        {
-            T value = null;
-            if (options != null)
-            {
-                for (CoapOption option : options)
-                {
-                    value = fetchOptionValue(targetType, option, expectedClazz);
-                    if (value != null)
-                        break;
-                }
-            }
-            return value;
-        }
-
-        @SuppressWarnings("unchecked")
-        private <T> T fetchOptionValue(CoapOptionType targetType, CoapOption option, Class<T> expectedClazz)
-        {
-            T value = null;
-            CoapOptionType optionType = CoapOptionType.valueOf(option.getNumber());
-            if (optionType == targetType)
-                value = (T) OptionParser.decode(optionType, option.getValue());
-            return value;
-        }
-    }
 
 }

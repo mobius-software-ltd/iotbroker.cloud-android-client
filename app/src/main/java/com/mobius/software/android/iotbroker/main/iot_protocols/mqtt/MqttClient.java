@@ -221,8 +221,7 @@ public class MqttClient implements IotProtocol {
 
     public void unsubscribe(String topicName, QoS qos) {
 
-        MQTopic topic = new MQTopic(new Text(topicName), qos);
-        MQTopic[] topics = new MQTopic[] { topic };
+		Text[] topics = new Text[] { new Text(topicName) };
 
         Unsubscribe uunsubscribe = new Unsubscribe(topics);
         timers.store(uunsubscribe);
@@ -317,7 +316,7 @@ public class MqttClient implements IotProtocol {
 
 					if (timer != null) {
 						Connect connect = (Connect) timer.retrieveMessage();
-						if (connect.isClean()) {
+						if (connect.isCleanSession()) {
 							clearAccountTopics();
 						}
 					}
@@ -422,10 +421,10 @@ public class MqttClient implements IotProtocol {
 
 				if (timer != null) {
 					Unsubscribe unsubscribe = (Unsubscribe) timer.retrieveMessage();
-					MQTopic[] topics = unsubscribe.getTopics();
+					Text[] topics = unsubscribe.getTopics();
 
-					for (MQTopic topic : topics) {
-						dbListener.deleteTopics(topic.getName());
+					for (Text topic : topics) {
+						dbListener.deleteTopics(topic);
 					}
 				}
 

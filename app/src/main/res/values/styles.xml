@@ -2,13 +2,29 @@
 
     <!--
         Base application theme, dependent on API level. This theme is replaced
-        by AppBaseTheme from res/values-vXX/styles.xml on newer devices.
+        by AppBaseTheme from res/values-vXX/styles.xml on newer devices.
+
+
+
+
+
+
+
+
     -->
     <style name="AppBaseTheme" parent="android:Theme.Light">
         <!--
             Theme customizations available in newer API levels can go in
             res/values-vXX/styles.xml, while customizations related to
-            backward-compatibility can go here.
+            backward-compatibility can go here.
+
+
+
+
+
+
+
+
         -->
 
     </style>
@@ -20,7 +36,7 @@
 
     <color name="tab_bar_background">#f9f9f9</color>
     <color name="tab_bar_tab_text_selected">#a0a7ab</color>
-    <color name="action_bar_background">#1876db</color>
+    <color name="action_bar_background">#19a3dc</color>
     <color name="action_bar_text_color">#ffffff</color>
 
     <style name="iotBrokerTheme" parent="AppBaseTheme">

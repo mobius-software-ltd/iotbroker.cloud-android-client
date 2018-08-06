@@ -14,7 +14,7 @@
 
     <uses-sdk
         android:minSdkVersion="17"
-        android:targetSdkVersion="17" />
+        android:targetSdkVersion="26" />
 
     <application
          android:name="com.mobius.software.android.iotbroker.main.base.IotBrokerApplication"
@@ -25,7 +25,7 @@
         android:theme="@style/AppTheme" >
         <activity
             android:name="com.mobius.software.android.iotbroker.main.activity.LoadingActivity"
-            android:icon="@drawable/iotbroker_icon"
+            android:icon="@mipmap/bar_icon"
             android:label="@string/app_name"
             android:launchMode="singleTop"
             android:theme="@style/iotBrokerTheme"
@@ -39,7 +39,7 @@
         </activity>
         <activity
             android:name="com.mobius.software.android.iotbroker.main.activity.LoginActivity"
-            android:icon="@drawable/iotbroker_icon"
+            android:icon="@mipmap/bar_icon"
             android:label="@string/login_title_log_in"
             android:launchMode="singleTop"
             android:theme="@style/iotBrokerTheme"
@@ -48,7 +48,7 @@
         </activity>
         <activity
             android:name="com.mobius.software.android.iotbroker.main.activity.TopicsMessagesActivity"
-            android:icon="@drawable/iotbroker_icon"
+            android:icon="@mipmap/bar_icon"
             android:label="@string/lbl_title_topics"
             android:launchMode="singleTop"
             android:theme="@style/iotBrokerTheme"
@@ -56,8 +56,7 @@
             </activity>
 
         <service android:name="com.mobius.software.android.iotbroker.main.services.NetworkService" ></service>
-       
-        
+
         <receiver android:name="com.mobius.software.android.iotbroker.main.managers.NetworkBroadcastManager" >
             <intent-filter>
                 <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />

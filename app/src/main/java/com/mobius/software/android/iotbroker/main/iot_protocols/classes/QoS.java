@@ -23,6 +23,7 @@ package com.mobius.software.android.iotbroker.main.iot_protocols.classes;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonValue;
 import com.mobius.software.android.iotbroker.main.iot_protocols.mqtt.parser.exceptions.MalformedMessageException;
 
 public enum QoS
@@ -43,6 +44,7 @@ public enum QoS
 		}
 	}
 
+	@JsonValue
 	public int getValue()
 	{
 		return value;

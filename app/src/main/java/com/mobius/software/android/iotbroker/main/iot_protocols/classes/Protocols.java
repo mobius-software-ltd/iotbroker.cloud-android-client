@@ -27,7 +27,7 @@ import java.util.Map;
 
 public enum Protocols {
 
-    MQTT_PROTOCOL(0), MQTT_SN_PROTOCOL(1), COAP_PROTOCOL(2), AMQP_PROTOCOL(3);
+    MQTT_PROTOCOL(0), MQTT_SN_PROTOCOL(1), COAP_PROTOCOL(2), AMQP_PROTOCOL(3), WEBSOCKET_PROTOCOL(4);
 
     private int value;
 

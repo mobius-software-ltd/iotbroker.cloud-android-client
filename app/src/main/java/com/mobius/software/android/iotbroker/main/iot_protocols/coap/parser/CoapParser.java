@@ -1,5 +1,7 @@
 package com.mobius.software.android.iotbroker.main.iot_protocols.coap.parser;
 
+import android.util.Log;
+
 import java.lang.reflect.Array;
 import java.util.List;
 import java.nio.ByteBuffer;
@@ -45,17 +47,17 @@ public class CoapParser extends AbstractParser {
 
     public Message decode(ByteBuf buf)  {
 
-        CoapHeader.Builder builder = CoapHeader.builder();
+        CoapHeader header = new CoapHeader();
 
         int firstByte = buf.readUnsignedByte();
 
         int version = firstByte >> 6;
         if (version != 1)
             throw new CoapParsingException("Invalid version:" + version);
-        builder.version(version);
+        header.setVersion(version);
 
         int typeValue = (firstByte >> 4) & 3;
-        builder.type(CoapType.valueOf(typeValue));
+        header.setCoapType(CoapType.valueOf(typeValue));
 
         int tokenLength = firstByte & 0xf;
         if (tokenLength > 8)
@@ -67,15 +69,15 @@ public class CoapParser extends AbstractParser {
         CoapCode code = CoapCode.valueOf(codeValue);
         if (code == null)
             throw new CoapParsingException("Unsupported code value:" + codeValue);
-        builder.code(code);
 
-        builder.messageID(buf.readUnsignedShort());
+        header.setCode(code);
+        header.setMessageID(buf.readUnsignedShort());
 
         if (tokenLength > 0)
         {
             byte[] token = new byte[tokenLength];
             buf.readBytes(token, 0, tokenLength);
-            builder.token(token);
+            header.setToken(token);
         }
 
         int number = 0;
@@ -87,12 +89,13 @@ public class CoapParser extends AbstractParser {
                 break;
 
             int delta = (nextByte >> 4) & 15;
-            if (delta == 13)
+            if (delta == 13) {
                 delta = buf.readByte() + 13;
-            else if (delta == 14)
+            } else if (delta == 14) {
                 delta = buf.readShort() + 269;
-            else if (delta > 14)
+            } else if (delta > 14) {
                 throw new CoapParsingException("Invalid option delta value:" + delta);
+            }
 
             number += delta;
 
@@ -108,17 +111,17 @@ public class CoapParser extends AbstractParser {
             if (optionLength > 0)
                 buf.readBytes(optionValue, 0, optionLength);
 
-            builder.option(new CoapOption(number, optionLength, optionValue));
+            header.addOption(new CoapOption(number, optionLength, optionValue));
         }
 
         if (buf.isReadable())
         {
             byte[] payload = new byte[buf.readableBytes()];
             buf.readBytes(payload);
-            builder.payload(payload);
+            header.setPayload(payload);
         }
 
-        return builder.build();
+        return header;
     }
 
     public ByteBuf encode(CoapHeader message)  {
@@ -128,7 +131,6 @@ public class CoapParser extends AbstractParser {
         byte firstByte = 0;
 
         firstByte += message.getVersion() << 6;
-
         firstByte += message.getType() << 4;
 
         if (message.getToken() != null)
@@ -139,6 +141,7 @@ public class CoapParser extends AbstractParser {
         int codeMsb = (message.getCode().getType() / 100);
         int codeLsb = (byte) (message.getCode().getType() % 100);
         int codeByte = ((codeMsb << 5) + codeLsb);
+
         buf.writeByte(codeByte);
 
         buf.writeShort(message.getMessageID());
@@ -164,6 +167,7 @@ public class CoapParser extends AbstractParser {
                     nextByte = 14 << 4;
             }
 
+
             Integer extendedLength = null;
             if (option.getLength() < 13)
                 nextByte += option.getLength();
@@ -179,10 +183,11 @@ public class CoapParser extends AbstractParser {
             buf.writeByte(nextByte);
             if (extendedDelta != null)
             {
-                if (extendedDelta < 0xFF)
+                if (extendedDelta < 0xFF) {
                     buf.writeByte(extendedDelta - 13);
-                else
+                } else {
                     buf.writeShort(extendedDelta - 269);
+                }
             }
 
             if (extendedLength != null)
@@ -204,7 +209,5 @@ public class CoapParser extends AbstractParser {
 
         return buf;
     }
-
-
 
 }

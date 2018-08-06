@@ -49,6 +49,7 @@
         <item>MQTT-SN</item>
         <item>CoAP</item>
         <item>AMQP</item>
+        <item>WEBSOCKET</item>
     </string-array>
 
     <string-array name="qos_array">

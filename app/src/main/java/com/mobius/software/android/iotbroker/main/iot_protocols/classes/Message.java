@@ -1,5 +1,8 @@
 package com.mobius.software.android.iotbroker.main.iot_protocols.classes;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * Mobius Software LTD
  * Copyright 2015-2016, Mobius Software LTD
@@ -22,9 +25,15 @@ package com.mobius.software.android.iotbroker.main.iot_protocols.classes;
 
 public interface Message
 {
+	public static final String JSON_MESSAGE_TYPE_PROPERTY_NAME = "packet";
+
+	@JsonIgnore
 	int getLength();
 
+	@JsonProperty(JSON_MESSAGE_TYPE_PROPERTY_NAME)
 	int getType();
+
+	@JsonIgnore
 	Protocols getProtocol();
 
 	void processBy(Device device);

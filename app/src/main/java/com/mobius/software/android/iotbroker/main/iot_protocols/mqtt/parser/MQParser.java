@@ -310,7 +310,7 @@ public class MQParser extends AbstractParser
 
 		case UNSUBSCRIBE:
 			Integer unsubID = buf.readUnsignedShort();
-			List<MQTopic> unsubscribeTopics = new ArrayList<MQTopic>();
+			List<Text> unsubscribeTopics = new ArrayList<>();
 			while (buf.isReadable())
 			{
 				byte[] value = new byte[buf.readUnsignedShort()];
@@ -319,12 +319,12 @@ public class MQParser extends AbstractParser
 				if (!StringVerifier.verify(topic))
 					throw new MalformedMessageException("Unsubscribe topic contains one or more restricted characters: U+0000, U+D000-U+DFFF");
 				MQTopic subscription = new MQTopic(new Text(topic), QoS.AT_MOST_ONCE);
-				unsubscribeTopics.add(subscription);
+				unsubscribeTopics.add(subscription.getName());
 			}
 			if (unsubscribeTopics.isEmpty())
 				throw new MalformedMessageException("Unsubscribe with 0 topics");
-			
-			header = new Unsubscribe(unsubID, unsubscribeTopics.toArray(new MQTopic[unsubscribeTopics.size()]));
+
+			header = new Unsubscribe(unsubID, unsubscribeTopics.toArray(new Text[unsubscribeTopics.size()]));
 			break;
 
 		case UNSUBACK:
@@ -369,18 +369,18 @@ public class MQParser extends AbstractParser
 
 			buf.setByte(0, (byte) (type.getNum() << 4));
 			buf.writeShort(4);
-			buf.writeBytes(connect.getName().getBytes());
+			buf.writeBytes(connect.getProtocolName().getBytes());
 			buf.writeByte(connect.getProtocolLevel());
 			byte contentFlags = 0;
 			contentFlags |= 0;
-			contentFlags |= connect.isClean() ? 0x02 : 0;
+			contentFlags |= connect.isCleanSession() ? 0x02 : 0;
 			contentFlags |= connect.isWillFlag() ? 0x04 : 0;
 			contentFlags |= connect.isWillFlag() ? connect.getWill().getTopic().getQos().getValue() << 3 : 0;
 			contentFlags |= connect.isWillFlag() ? connect.getWill().getRetain() ? 0x20 : 0 : 0;
 			contentFlags |= connect.isUsernameFlag() ? 0x40 : 0;
 			contentFlags |= connect.isPasswordFlag() ? 0x80 : 0;
 			buf.writeByte(contentFlags);
-			buf.writeShort(connect.getKeepAlive());
+			buf.writeShort(connect.getKeepalive());
 			buf.writeShort(connect.getClientID().length());
 			buf.writeBytes(connect.getClientID().getBytes("UTF-8"));
 
@@ -401,7 +401,7 @@ public class MQParser extends AbstractParser
 				}
 			}
 
-			String username = connect.getUserName();
+			String username = connect.getUsername();
 			if (username != null)
 			{
 				buf.writeShort(username.length());
@@ -486,10 +486,10 @@ public class MQParser extends AbstractParser
 			Unsubscribe unsub = (Unsubscribe) header;
 			buf.setByte(0, (byte) ((type.getNum() << 4) | 0x2));
 			buf.writeShort(unsub.getPacketID());
-			for (MQTopic topic : unsub.getTopics())
+			for (Text topic : unsub.getTopics())
 			{
-				buf.writeShort(topic.getName().length());
-				buf.writeBytes(topic.getName().toString().getBytes("UTF-8"));
+				buf.writeShort(topic.length());
+				buf.writeBytes(topic.toString().getBytes("UTF-8"));
 			}
 			break;
 

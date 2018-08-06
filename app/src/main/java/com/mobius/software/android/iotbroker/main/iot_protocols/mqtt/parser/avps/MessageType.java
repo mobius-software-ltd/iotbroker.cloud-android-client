@@ -23,6 +23,7 @@ package com.mobius.software.android.iotbroker.main.iot_protocols.mqtt.parser.avp
 import java.util.HashMap;
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonValue;
 import com.mobius.software.android.iotbroker.main.iot_protocols.mqtt.parser.exceptions.MalformedMessageException;
 
 public enum MessageType
@@ -41,6 +42,7 @@ public enum MessageType
 		}
 	}
 
+	@JsonValue
 	public int getNum()
 	{
 		return num;

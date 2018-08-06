@@ -44,6 +44,7 @@ import com.mobius.software.android.iotbroker.main.activity.LoadingActivity;
 import com.mobius.software.android.iotbroker.main.base.ApplicationSettings;
 import com.mobius.software.android.iotbroker.main.dal.DataBaseManager;
 import com.mobius.software.android.iotbroker.main.iot_protocols.mqtt_sn.MqttSnClient;
+import com.mobius.software.android.iotbroker.main.iot_protocols.websocket.WebsocketMQTT;
 import com.mobius.software.android.iotbroker.main.listeners.ClientStateListener;
 import com.mobius.software.android.iotbroker.main.listeners.NetworkStateListener;
 import com.mobius.software.android.iotbroker.main.managers.ConnectionState;
@@ -179,6 +180,11 @@ public class NetworkService extends Service implements NetworkStateListener, Cli
 				client = new AmqpClient(address, username, password, clientID, isClean, keepalive, will, crtPath, crtPassword, NetworkService.this);
 			else
 				client = new AmqpClient(address, username, password, clientID, isClean, keepalive, will, NetworkService.this);
+		} else if (protocol == Protocols.WEBSOCKET_PROTOCOL.getValue()) {
+			if (isSecure)
+				client = new WebsocketMQTT(address, username, password, clientID, isClean, keepalive, will, crtPath, crtPassword, NetworkService.this);
+			else
+				client = new WebsocketMQTT(address, username, password, clientID, isClean, keepalive, will, NetworkService.this);
 		}
 
 		client.setListener(instance);

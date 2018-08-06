@@ -1,5 +1,6 @@
 package com.mobius.software.android.iotbroker.main.iot_protocols.mqtt.parser.avps;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.mobius.software.android.iotbroker.main.iot_protocols.classes.QoS;
 import com.mobius.software.android.iotbroker.main.iot_protocols.classes.Topic;
 import com.mobius.software.android.iotbroker.main.iot_protocols.mqtt_sn.parser.avps.TopicType;
@@ -57,6 +58,7 @@ public class MQTopic implements Topic
 	}
 
 	@Override
+	@JsonIgnore
 	public TopicType getType() {
 		return null;
 	}

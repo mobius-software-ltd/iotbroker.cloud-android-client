@@ -33,7 +33,6 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
-import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
@@ -54,24 +53,15 @@ import com.mobius.software.android.iotbroker.main.dal.AccountsDao.Properties;
 import com.mobius.software.android.iotbroker.main.dal.DaoType;
 import com.mobius.software.android.iotbroker.main.iot_protocols.classes.Protocols;
 import com.mobius.software.android.iotbroker.main.iot_protocols.classes.QoS;
-import com.mobius.software.android.iotbroker.main.iot_protocols.coap.headercoap.CoapCode;
-import com.mobius.software.android.iotbroker.main.iot_protocols.coap.headercoap.CoapHeader;
-import com.mobius.software.android.iotbroker.main.iot_protocols.coap.headercoap.CoapType;
-import com.mobius.software.android.iotbroker.main.iot_protocols.coap.parser.CoapParser;
 import com.mobius.software.android.iotbroker.main.iot_protocols.mqtt.parser.avps.MQTopic;
 import com.mobius.software.android.iotbroker.main.iot_protocols.mqtt.parser.avps.Text;
 import com.mobius.software.android.iotbroker.main.iot_protocols.mqtt.parser.avps.Will;
 import com.mobius.software.android.iotbroker.main.managers.NetworkManager;
 import com.mobius.software.android.iotbroker.main.services.NetworkService;
-import com.mobius.software.android.iotbroker.main.utility.ConvertorUtil;
 import com.mobius.software.android.iotbroker.main.utility.MessageDialog;
 import com.mobius.software.iotbroker.androidclient.R;
-
-import java.io.File;
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
 import java.util.List;
-
 import de.greenrobot.dao.query.QueryBuilder;
 import de.mxapplications.openfiledialog.OpenFileDialog;
 
@@ -93,7 +83,7 @@ public class LoginActivity extends Activity implements AdapterView.OnItemSelecte
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_login);
-		
+
 		Spinner spinnerProtocolType = (Spinner) findViewById(R.id.tbx_protocol_type);
 		spinnerProtocolType.setOnItemSelectedListener(this);
 
@@ -495,7 +485,7 @@ public class LoginActivity extends Activity implements AdapterView.OnItemSelecte
 	@Override
 	public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
 
-		if (Protocols.MQTT_PROTOCOL.getValue() == position) {
+		if (Protocols.MQTT_PROTOCOL.getValue() == position || Protocols.WEBSOCKET_PROTOCOL.getValue() == position) {
 			findViewById(R.id.username_cell).setVisibility(View.VISIBLE);
 			findViewById(R.id.password_cell).setVisibility(View.VISIBLE);
 			findViewById(R.id.client_id_cell).setVisibility(View.VISIBLE);

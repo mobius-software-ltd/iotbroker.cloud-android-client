@@ -25,17 +25,20 @@ import com.mobius.software.android.iotbroker.main.iot_protocols.mqtt.parser.avps
 import com.mobius.software.android.iotbroker.main.iot_protocols.mqtt.parser.avps.MQTopic;
 import com.mobius.software.android.iotbroker.main.iot_protocols.classes.CountableMessage;
 import com.mobius.software.android.iotbroker.main.iot_protocols.classes.Device;
+import com.mobius.software.android.iotbroker.main.iot_protocols.mqtt.parser.avps.Text;
+
+import java.util.List;
 
 public class Unsubscribe extends CountableMessage
 {
-	private MQTopic[] topics;
+	private Text[] topics;
 
-	public Unsubscribe(MQTopic[] topics)
+	public Unsubscribe(Text[] topics)
 	{
 		this(null, topics);
 	}
 
-	public Unsubscribe(Integer packetID, MQTopic[] topics)
+	public Unsubscribe(Integer packetID, Text[] topics)
 	{
 		super(packetID);
 		this.topics = topics;
@@ -45,8 +48,8 @@ public class Unsubscribe extends CountableMessage
 	public int getLength()
 	{
 		int length = 2;
-		for (MQTopic topic : topics)
-			length += topic.getName().length() + 2;
+		for (Text topic : topics)
+			length += topic.length() + 2;
 		return length;
 	}
 
@@ -67,12 +70,12 @@ public class Unsubscribe extends CountableMessage
 		return Protocols.MQTT_PROTOCOL;
 	}
 
-	public MQTopic[] getTopics()
+	public Text[] getTopics()
 	{
 		return topics;
 	}
 
-	public void setTopics(MQTopic[] topics)
+	public void setTopics(Text[] topics)
 	{
 		this.topics = topics;
 	}

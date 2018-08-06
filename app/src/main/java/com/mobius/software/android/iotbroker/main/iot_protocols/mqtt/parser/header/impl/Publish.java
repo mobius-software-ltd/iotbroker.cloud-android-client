@@ -20,6 +20,8 @@ package com.mobius.software.android.iotbroker.main.iot_protocols.mqtt.parser.hea
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.mobius.software.android.iotbroker.main.iot_protocols.classes.Protocols;
 import com.mobius.software.android.iotbroker.main.iot_protocols.mqtt.parser.avps.MessageType;
 import com.mobius.software.android.iotbroker.main.iot_protocols.mqtt.parser.avps.MQTopic;
