@@ -245,15 +245,16 @@ public class CoapClient implements IotProtocol {
     @Override
     public void connectionLost() {
         if (isClean)
-            clearAccountTopics();
+            cleanCurrentSession();
         setState(ConnectionState.CONNECTION_LOST);
 
         if (timers != null)
             timers.stopAllTimers();
     }
 
-    private void clearAccountTopics() {
+    private void cleanCurrentSession() {
         dbListener.clearTopicByActiveAccount();
+        dbListener.deleteMessages();
     }
 
     private void writeTopics(String topicName, int qos) {

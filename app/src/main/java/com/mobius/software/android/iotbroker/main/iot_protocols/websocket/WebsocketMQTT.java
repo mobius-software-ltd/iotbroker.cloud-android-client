@@ -254,15 +254,16 @@ public class WebsocketMQTT implements IotProtocol {
     @Override
     public void connectionLost() {
         if (isClean)
-            clearAccountTopics();
+            cleanCurrentSession();
         setState(ConnectionState.CONNECTION_LOST);
 
         if (timers != null)
             timers.stopAllTimers();
     }
 
-    private void clearAccountTopics() {
+    private void cleanCurrentSession() {
         dbListener.clearTopicByActiveAccount();
+        dbListener.deleteMessages();
     }
 
     private void writeTopics(String topicName, int qos) {
@@ -296,7 +297,7 @@ public class WebsocketMQTT implements IotProtocol {
                     if (timer != null) {
                         Connect connect = (Connect) timer.retrieveMessage();
                         if (connect.isCleanSession()) {
-                            clearAccountTopics();
+                            cleanCurrentSession();
                         }
                     }
 

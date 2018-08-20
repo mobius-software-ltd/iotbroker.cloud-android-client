@@ -119,7 +119,8 @@
     <string name="sm_error_packed_is_required">Packed ID is required field</string>
     <string name="tl_add_topic_error_title">Error</string>
     <string name="tl_new_required_field_name">Topic name is required field</string>
-    <string name="keep_alive_must_more_zero">Keep alive must be more zero</string>
+    <string name="tl_new_topic_have_been_alredy_use">Topic have been already use</string>
+    <string name="keep_alive_must_more_zero">Keep alive must be more zero and less that 65535</string>
     <string name="login_curent_keep_alive">10</string>
     <string name="delete_this_topic_description">delete this topic</string>
     <string name="tl_delete_this_topic">delete this topic</string>

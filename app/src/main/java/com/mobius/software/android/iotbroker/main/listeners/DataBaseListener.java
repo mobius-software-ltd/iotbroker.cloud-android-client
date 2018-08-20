@@ -32,6 +32,7 @@ public interface DataBaseListener {
 	void addMessage(String contentMessage, int qos, boolean isIncoming, String topicName);
 
 	void deleteTopics(Text topicName);
+	void deleteMessages();
 
 	boolean writeTopics(String topicName, int qos);
 

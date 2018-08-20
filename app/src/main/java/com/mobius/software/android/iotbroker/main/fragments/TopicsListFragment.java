@@ -112,6 +112,14 @@ public class TopicsListFragment extends Fragment {
 					return;
 				}
 
+				for (Topics topic : topicsList) {
+					if (topic.getTopicName().equals(topicsName.toLowerCase())) {
+						MessageDialog.showMessage(getActivity(), getString(R.string.tl_add_topic_error_title),
+								getString(R.string.tl_new_topic_have_been_alredy_use));
+						return;
+					}
+				}
+
 				String topicsQos = spnrQos.getSelectedItem().toString();
 				int qos = Integer.parseInt(topicsQos);
 

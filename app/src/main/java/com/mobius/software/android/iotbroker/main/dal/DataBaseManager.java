@@ -28,6 +28,7 @@ import com.mobius.software.android.iotbroker.main.listeners.DataBaseListener;
 import com.mobius.software.android.iotbroker.main.iot_protocols.mqtt.parser.avps.Text;
 
 import android.content.Context;
+import android.util.Log;
 
 import de.greenrobot.dao.query.QueryBuilder;
 
@@ -92,6 +93,23 @@ public class DataBaseManager implements DataBaseListener {
 				topicDao.delete(entity);
 			}
 		}
+	}
+
+	@Override
+	public void deleteMessages() {
+		Accounts activeAccounts = getActiveAccount();
+		MessagesDao messagesDao = ((MessagesDao) DaoObject.getDao(context, DaoType.MessagesDao));
+
+		QueryBuilder<Messages> queryBuilder = messagesDao.queryBuilder();
+		queryBuilder.where(com.mobius.software.android.iotbroker.main.dal.MessagesDao.Properties.AccountID.eq(activeAccounts.getId()));
+		List<Messages> messagesList = queryBuilder.list();
+
+		if (messagesList != null) {
+			for (Messages entity : messagesList) {
+				messagesDao.delete(entity);
+			}
+		}
+
 	}
 
 	@Override

@@ -33,6 +33,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
@@ -322,7 +323,7 @@ public class LoginActivity extends Activity implements AdapterView.OnItemSelecte
 				keepAlive = Integer.parseInt(keepAliveString);
 			}
 
-			if (keepAlive < 1) {
+			if (keepAlive < 1 || keepAlive > 65535) {
 				MessageDialog.showMessage(this, errorTitle, getString(R.string.keep_alive_must_more_zero));
 				return;
 			}
@@ -457,11 +458,10 @@ public class LoginActivity extends Activity implements AdapterView.OnItemSelecte
 					if (will == null) {
 						accountDao.update(account);
 					} else {
-						account.setWill(null);
-						account.setWillTopic(null);
-						account.setIsRetain(false);
-						account.setQos(null);
-
+						account.setWill(new String(will.getContent()));
+						account.setWillTopic(will.getTopic().toString());
+						account.setIsRetain(will.getRetain());
+						account.setQos(will.getTopic().getQos().getValue());
 						accountDao.update(account);
 					}
 				} else {
