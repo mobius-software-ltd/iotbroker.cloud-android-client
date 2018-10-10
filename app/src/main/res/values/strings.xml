@@ -107,6 +107,7 @@
     <string name="error_message_Title">Error</string>
     <string name="error_required_user_name">Username is required field</string>
     <string name="error_required_password">Password is required field</string>
+    <string name="tl_new_client_id_have_been_alredy_use">This client id have been already use</string>
     <string name="error_required_client_id">Client ID is required field</string>
     <string name="error_required_server_host">Server host is required field</string>
     <string name="connecting_error_title_dialog">Connecting Error</string>

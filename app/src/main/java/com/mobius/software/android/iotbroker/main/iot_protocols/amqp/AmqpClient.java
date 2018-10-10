@@ -220,11 +220,16 @@ public class AmqpClient implements IotProtocol {
         client.shutdown();
     }
 
+    @Override
+    public void send(Message message) {
+        client.send(message);
+    }
+
     public void connect() {
         setState(ConnectionState.CONNECTING);
         timers = new TimersMap(this, client);
 
-        AMQPProtoHeader header = new AMQPProtoHeader(3);
+        AMQPProtoHeader header = new AMQPProtoHeader(0);
         client.send(header);
     }
 
@@ -594,8 +599,12 @@ public class AmqpClient implements IotProtocol {
                 SASLOutcome outcome = (SASLOutcome)message;
                 if (outcome.getOutcomeCode() == OutcomeCodes.OK) {
                     this.isSASLСonfirm = true;
-                    AMQPProtoHeader header = new AMQPProtoHeader(0);
-                    client.send(header);
+                    chanel = outcome.getChannel();
+                    AMQPOpen open = new AMQPOpen();
+                    open.setContainerId(this.clientID);
+                    open.setIdleTimeout((long) this.keepalive);
+                    open.setChannel(outcome.getChannel());
+                    client.send(open);
                 } else if (outcome.getOutcomeCode() == OutcomeCodes.AUTH) {
                     throw new CoreLogicException("received invalid message outcome(AUTH)");
                 } else if (outcome.getOutcomeCode() == OutcomeCodes.SYS) {
@@ -624,6 +633,11 @@ public class AmqpClient implements IotProtocol {
 
     public void executeTimer(TimerTask task, long period) {
         timer.schedule(task, period);
+    }
+
+    @Override
+    public void timeout() {
+
     }
 
     @Override

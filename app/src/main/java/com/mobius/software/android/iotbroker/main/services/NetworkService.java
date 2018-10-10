@@ -140,9 +140,9 @@ public class NetworkService extends Service implements NetworkStateListener, Cli
 			} else if (action.equalsIgnoreCase(ApplicationSettings.ACTION_PUBLISH)) {
 				String content = intent.getStringExtra(ApplicationSettings.PARAM_CONTENT);
 				String topicName = intent.getStringExtra(ApplicationSettings.PARAM_TOPIC);
-				int qos = Integer.parseInt(intent.getStringExtra(ApplicationSettings.PARAM_QOS));
-				boolean isRetain = Boolean.parseBoolean(intent.getStringExtra(ApplicationSettings.PARAM_USERNAME));
-				boolean isDublicate = Boolean.parseBoolean(intent.getStringExtra(ApplicationSettings.PARAM_USERNAME));
+				int qos = intent.getIntExtra(ApplicationSettings.PARAM_QOS, 0);
+				boolean isRetain = intent.getBooleanExtra(ApplicationSettings.PARAM_IS_RETAIN, false);
+				boolean isDublicate = intent.getBooleanExtra(ApplicationSettings.PARAM_IS_DUBLICATE, false);
 				publish(content, topicName, qos, isRetain, isDublicate);
 			} else if (action.equalsIgnoreCase(ApplicationSettings.STATE_CHANGED)) {
 				String connStateStr = intent.getStringExtra(ApplicationSettings.PARAM_STATE);			
@@ -172,9 +172,15 @@ public class NetworkService extends Service implements NetworkStateListener, Cli
 			else
 				client = new MqttClient(address, username, password, clientID, isClean, keepalive, will, NetworkService.this);
 		} else if (protocol == Protocols.MQTT_SN_PROTOCOL.getValue()) {
-			client = new MqttSnClient(address, username, password, clientID, isClean, keepalive, will, NetworkService.this);
+			if (isSecure)
+				client = new MqttSnClient(address, clientID, isClean, keepalive, will, crtPath, crtPassword, NetworkService.this);
+			else
+				client = new MqttSnClient(address, clientID, isClean, keepalive, will, NetworkService.this);
 		} else if (protocol == Protocols.COAP_PROTOCOL.getValue()) {
-			client = new CoapClient(address, username, password, clientID, isClean, keepalive, will, NetworkService.this);
+			if (isSecure)
+				client = new CoapClient(address, clientID, isClean, keepalive, crtPath, crtPassword, NetworkService.this);
+			else
+				client = new CoapClient(address, clientID, isClean, keepalive, NetworkService.this);
 		} else if (protocol == Protocols.AMQP_PROTOCOL.getValue()) {
 			if (isSecure)
 				client = new AmqpClient(address, username, password, clientID, isClean, keepalive, will, crtPath, crtPassword, NetworkService.this);

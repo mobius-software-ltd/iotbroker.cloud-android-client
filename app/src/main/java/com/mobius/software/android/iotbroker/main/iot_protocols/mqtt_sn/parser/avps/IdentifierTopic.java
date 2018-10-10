@@ -35,6 +35,10 @@ public class IdentifierTopic implements Topic
 		super();
 	}
 
+	public static short valueByBytes(byte[] bytes) {
+		return ByteBuffer.wrap(bytes).getShort();
+	}
+
 	public IdentifierTopic(int value, QoS qos)
 	{
 		this.value = value;

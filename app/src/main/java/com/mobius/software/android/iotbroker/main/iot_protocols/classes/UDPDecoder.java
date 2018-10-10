@@ -37,6 +37,7 @@ public class UDPDecoder extends MessageToMessageDecoder {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     protected void decode(ChannelHandlerContext channelHandlerContext, Object o, List list) throws Exception
     {
         if (o instanceof DatagramPacket) {

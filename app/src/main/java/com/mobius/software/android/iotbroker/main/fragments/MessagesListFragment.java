@@ -21,6 +21,7 @@ package com.mobius.software.android.iotbroker.main.fragments;
  */
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import android.app.Fragment;
@@ -86,6 +87,8 @@ public class MessagesListFragment extends Fragment {
 
 			messagesArray = messageDao.queryBuilder().where(
 					com.mobius.software.android.iotbroker.main.dal.MessagesDao.Properties.AccountID.eq(account.getId())).list();
+
+			Collections.reverse(messagesArray);
 		}
 	}
 

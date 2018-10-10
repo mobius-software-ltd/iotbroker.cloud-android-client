@@ -2,6 +2,7 @@ package com.mobius.software.android.iotbroker.main.iot_protocols.coap.parser;
 
 import android.util.Log;
 
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Array;
 import java.util.List;
 import java.nio.ByteBuffer;
@@ -18,6 +19,7 @@ import com.mobius.software.android.iotbroker.main.iot_protocols.coap.headercoap.
 import com.mobius.software.android.iotbroker.main.iot_protocols.coap.headercoap.CoapHeader;
 import com.mobius.software.android.iotbroker.main.iot_protocols.coap.headercoap.CoapOptionType;
 import com.mobius.software.android.iotbroker.main.iot_protocols.coap.headercoap.CoapContentFormat;
+import com.mobius.software.android.iotbroker.main.iot_protocols.mqtt.parser.exceptions.MalformedMessageException;
 
 /**
  * Mobius Software LTD
@@ -124,8 +126,9 @@ public class CoapParser extends AbstractParser {
         return header;
     }
 
-    public ByteBuf encode(CoapHeader message)  {
+    public ByteBuf encode(Message header)  {
 
+        CoapHeader message = (CoapHeader)header;
         ByteBuf buf = Unpooled.buffer();
 
         byte firstByte = 0;

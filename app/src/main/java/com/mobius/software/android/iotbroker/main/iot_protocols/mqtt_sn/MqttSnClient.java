@@ -42,9 +42,12 @@ import com.mobius.software.android.iotbroker.main.listeners.ClientStateListener;
 import com.mobius.software.android.iotbroker.main.listeners.DataBaseListener;
 import com.mobius.software.android.iotbroker.main.managers.ConnectionState;
 import com.mobius.software.android.iotbroker.main.managers.MessageResendTimerTask;
+import com.mobius.software.android.iotbroker.main.net.DtlsClient;
+import com.mobius.software.android.iotbroker.main.net.InternetProtocol;
 import com.mobius.software.android.iotbroker.main.net.UDPClient;
 import com.mobius.software.android.iotbroker.main.managers.ConnectionTimerTask;
 import com.mobius.software.android.iotbroker.main.services.NetworkService;
+import com.mobius.software.android.iotbroker.main.utility.FileManager;
 
 import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
@@ -80,9 +83,7 @@ public class MqttSnClient implements IotProtocol {
     private ConnectionState connectionState;
 
     private TimersMap timers;
-    private UDPClient client;
-    private String username;
-    private String password;
+    private InternetProtocol client;
     private String clientID;
     private boolean isClean;
     private int keepalive;
@@ -92,30 +93,42 @@ public class MqttSnClient implements IotProtocol {
     private java.util.Timer timer = new java.util.Timer();
     private ConnectionTimerTask connectionCheckTask;
 
-    private Map<Integer, SNPublish> listForPublish;
-    private Map<Integer, Message> publishPackets;
+    private boolean isSecure = false;
+
+    private Map<Integer, SNPublish> publishPackets;
+    private Map<Integer, String> topics;
 
     private DataBaseListener dbListener;
     private static ConnectionState currentState;
 
-    private int counter;
-
-    public MqttSnClient(InetSocketAddress address, String username, String password, String clientID, boolean isClean,
+    public MqttSnClient(InetSocketAddress address, String clientID, boolean isClean,
                         int keepalive, Will will, Context context) {
 
         this.publishPackets = new HashMap<>();
-        this.listForPublish = new HashMap<>();
+        this.topics = new HashMap<>();
 
         this.address = address;
-        this.username = username;
-        this.password = password;
         this.clientID = clientID;
         this.isClean = isClean;
         this.keepalive = keepalive;
         this.will = will;
         this.context = context;
         this.client = new UDPClient(address, workerThreads);
-        this.counter = 0;
+    }
+
+    public MqttSnClient(InetSocketAddress address, String clientID, boolean isClean,
+                      int keepalive, Will will, String crtPath, String crtPass, Context context) {
+        this.isSecure = true;
+        this.address = address;
+        this.clientID = clientID;
+        this.isClean = isClean;
+        this.keepalive = keepalive;
+        this.will = will;
+        this.context = context;
+        this.client = new DtlsClient(address, workerThreads);
+        ((DtlsClient)this.client).setSecure(this.isSecure);
+        ((DtlsClient)this.client).setKeyStore(FileManager.loadKeyStore(crtPath, crtPass));
+        ((DtlsClient)this.client).setKeyStorePassword(crtPass);
     }
 
     public void setListener(ClientStateListener listener) {
@@ -169,6 +182,11 @@ public class MqttSnClient implements IotProtocol {
 
     public void closeChannel() {
         client.shutdown();
+    }
+
+    @Override
+    public void send(Message message) {
+        client.send(message);
     }
 
     public void connect() {
@@ -234,13 +252,10 @@ public class MqttSnClient implements IotProtocol {
         ByteBuf wrappedBuffer = Unpooled.wrappedBuffer(content);
         FullTopic topic = new FullTopic(topicName, qos);
 
-        if (topic.getQos() != QoS.AT_MOST_ONCE) {
-            timers.store(register);
-        } else {
-            this.counter = ((this.counter + 1) >= 65535) ? 1 : ++this.counter;
-            this.listForPublish.put(this.counter, new SNPublish(this.counter, topic, wrappedBuffer, dup, retain));
-            register.setPacketID(this.counter);
-        }
+        int packetId = timers.store(register);
+        this.publishPackets.put(packetId, new SNPublish(packetId, topic, wrappedBuffer, dup, retain));
+        register.setPacketID(packetId);
+
         client.send(register);
     }
 
@@ -259,9 +274,15 @@ public class MqttSnClient implements IotProtocol {
             timers.stopAllTimers();
 
         if (client != null) {
-            UDPClient currClient = client;
-            client = null;
-            currClient.shutdown();
+            if (this.isSecure) {
+                DtlsClient currClient = (DtlsClient)client;
+                client = null;
+                currClient.shutdown();
+            } else {
+                UDPClient currClient = (UDPClient)client;
+                client = null;
+                currClient.shutdown();
+            }
         }
     }
 
@@ -305,8 +326,6 @@ public class MqttSnClient implements IotProtocol {
         }
 
         SNType type = SNType.valueOf(message.getType());
-        Log.v("TAG", " -> "+type.toString());
-
         switch (type) {
             case ADVERTISE:
             {
@@ -370,15 +389,18 @@ public class MqttSnClient implements IotProtocol {
             {
                 Register register = (Register)message;
                 Regack regack = new Regack(register.getTopicID(), register.getPacketID(), ReturnCode.ACCEPTED);
+                this.topics.put(register.getTopicID(), register.getTopicName());
                 client.send(regack);
             } break;
             case REGACK:
             {
                 Regack regack = (Regack)message;
-                timers.remove(regack.getPacketID());
-
+                Register register = (Register)timers.remove(regack.getPacketID()).retrieveMessage();
+                if (register != null) {
+                    this.topics.put(regack.getTopicID(), register.getTopicName());
+                }
                 if (regack.getCode() == ReturnCode.ACCEPTED) {
-                    SNPublish publish = this.listForPublish.get(regack.getTopicID());
+                    SNPublish publish = this.publishPackets.get(regack.getPacketID());
                     if (publish != null) {
                         IdentifierTopic topic = new IdentifierTopic(regack.getTopicID(), publish.getTopic().getQos());
                         publish.setPacketID(regack.getPacketID());
@@ -396,58 +418,56 @@ public class MqttSnClient implements IotProtocol {
                 QoS publisherQos = publish.getTopic().getQos();
                 switch (publisherQos) {
                     case AT_LEAST_ONCE:
-                        int topicID = Integer.parseInt(publish.getTopic().encode().toString());
-                        SNPuback puback = new SNPuback(topicID, publish.getPacketID(), ReturnCode.ACCEPTED);
-                        client.send(puback);
+                        if (publish.getTopic() instanceof IdentifierTopic) {
+                            int topicID = IdentifierTopic.valueByBytes(publish.getTopic().encode());
+                            SNPuback puback = new SNPuback(topicID, publish.getPacketID(), ReturnCode.ACCEPTED);
+                            client.send(puback);
+                        }
                         break;
                     case EXACTLY_ONCE:
                         SNPubrec pubrec = new SNPubrec(publish.getPacketID());
                         publishPackets.put(publish.getPacketID(), publish);
                         client.send(pubrec);
                         break;
-                    default:
-                        break;
+                    default: break;
+                }
+
+                if (!publish.isDup() && publisherQos != QoS.EXACTLY_ONCE) {
+                    this.saveMessage(publish, true);
                 }
 
                 sendMessageIntent(MessageType.PUBLISH);
-                if (dbListener.isTopicExist(Arrays.toString(publish.getTopic().encode()))) {
-                    return;
-                }
-
-                if (!(publish.isDup() && publisherQos == QoS.EXACTLY_ONCE)) {
-                    String contentMessage;
-                    try {
-                        contentMessage = new String(publish.getContent().array(), "UTF-8");
-                        dbListener.addMessage(contentMessage, publisherQos.getValue(), true, Arrays.toString(publish.getTopic().encode()));
-                    }
-                    catch (UnsupportedEncodingException e) {
-
-                    }
-                }
             } break;
             case PUBACK:
             {
                 SNPuback puback = (SNPuback)message;
                 timers.remove(puback.getPacketID());
                 sendMessageIntent(MessageType.PUBACK);
+                this.publishPackets.remove(puback.getPacketID());
             } break;
             case PUBCOMP:
             {
                 SNPubcomp pubcomp = (SNPubcomp)message;
                 timers.remove(pubcomp.getPacketID());
                 sendMessageIntent(MessageType.PUBCOMP);
+                this.publishPackets.remove(pubcomp.getPacketID());
             } break;
             case PUBREC:
             {
                 SNPubrec pubrec = (SNPubrec)message;
+                timers.remove(pubrec.getPacketID());
                 SNPubrel pubrel = new SNPubrel(pubrec.getPacketID());
-                timers.refreshTimer(pubrel);
+                timers.store(pubrel);
                 client.send(pubrel);
             } break;
             case PUBREL:
             {
                 SNPubrel pubrel = (SNPubrel)message;
-                client.send(new SNPubcomp(pubrel.getPacketID()));
+                timers.remove(pubrel.getPacketID());
+                SNPublish publish = this.publishPackets.get(pubrel.getPacketID());
+                SNPubcomp pubcomp = new SNPubcomp(pubrel.getPacketID());
+                client.send(pubcomp);
+                this.saveMessage(publish, true);
             } break;
             case SUBSCRIBE:
             {
@@ -463,7 +483,8 @@ public class MqttSnClient implements IotProtocol {
                     Topic topic = subscribe.getTopic();
                     QoS expectedQos = topic.getQos();
                     int qos = expectedQos.getValue();
-                    writeTopics(Arrays.toString(topic.encode()), qos);
+                    this.topics.put(suback.getTopicID(), new String(subscribe.getTopic().encode()));
+                    writeTopics(new String(topic.encode()), qos);
                 }
             } break;
             case UNSUBSCRIBE:
@@ -477,11 +498,8 @@ public class MqttSnClient implements IotProtocol {
 
                 if (timer != null) {
                     SNUnsubscribe unsubscribe = (SNUnsubscribe) timer.retrieveMessage();
-                    Topic topic = unsubscribe.getTopic();
-
-                    dbListener.deleteTopics(new Text(topic.encode().toString()));
+                    dbListener.deleteTopics(new Text(new String(unsubscribe.getTopic().encode())));
                 }
-
                 sendMessageIntent(MessageType.UNSUBACK);
             } break;
             case PINGREQ:
@@ -494,7 +512,7 @@ public class MqttSnClient implements IotProtocol {
             } break;
             case DISCONNECT:
             {
-                timers.stopAllTimers();
+                this.closeConnection();
             } break;
             case WILL_TOPIC_UPD:
             {
@@ -533,6 +551,11 @@ public class MqttSnClient implements IotProtocol {
     }
 
     @Override
+    public void timeout() {
+        this.closeConnection();
+    }
+
+    @Override
     public void writeError() {
         if (this.listener != null)
             listener.writeError();
@@ -541,4 +564,29 @@ public class MqttSnClient implements IotProtocol {
     public ConnectionState currentState() {
         return currentState;
     }
+
+    private void saveMessage(SNPublish publish, boolean isIncome) {
+
+        String topicName = "";
+        String contentMessage;
+
+        if (publish.getTopic() instanceof FullTopic) {
+            topicName = new String(publish.getTopic().encode());
+        }
+
+        if (publish.getTopic() instanceof IdentifierTopic) {
+            int topicId = IdentifierTopic.valueByBytes(publish.getTopic().encode());
+            topicName = this.topics.get(topicId);
+        }
+
+        try {
+            contentMessage = new String(publish.getContent().array(), "UTF-8");
+            dbListener.addMessage(contentMessage, publish.getTopic().getQos().getValue(), isIncome, topicName);
+        }
+        catch (UnsupportedEncodingException e) {
+            Log.i("TAG", e.getLocalizedMessage());
+        }
+
+    }
+
 }

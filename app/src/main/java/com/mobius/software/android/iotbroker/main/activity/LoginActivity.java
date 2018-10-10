@@ -288,6 +288,16 @@ public class LoginActivity extends Activity implements AdapterView.OnItemSelecte
 			}
 		}
 
+		final AccountsDao accountDao = ((AccountsDao) DaoObject.getDao(LoginActivity.this, DaoType.AccountsDao));
+		QueryBuilder<Accounts> queryBuilder = accountDao.queryBuilder();
+		queryBuilder.where(AccountsDao.Properties.ClientID.eq(clientID));
+		List<Accounts> accountList = queryBuilder.list();
+
+		if (accountList.size() > 0) {
+			MessageDialog.showMessage(this, errorTitle, getString(R.string.tl_new_client_id_have_been_alredy_use));
+			return;
+		}
+
 		if (findViewById(R.id.host_cell).getVisibility() == View.VISIBLE) {
 			EditText tbxServerHost = (EditText) findViewById(R.id.txt_server_host);
 			serverHost = tbxServerHost.getText().toString();
@@ -517,7 +527,7 @@ public class LoginActivity extends Activity implements AdapterView.OnItemSelecte
 			findViewById(R.id.client_id_cell).setVisibility(View.VISIBLE);
 			findViewById(R.id.host_cell).setVisibility(View.VISIBLE);
 			findViewById(R.id.port_cell).setVisibility(View.VISIBLE);
-			findViewById(R.id.settings_cell).setVisibility(View.GONE);
+			findViewById(R.id.settings_cell).setVisibility(View.VISIBLE);
 			findViewById(R.id.clean_session_cell).setVisibility(View.GONE);
 			findViewById(R.id.keepalive_cell).setVisibility(View.VISIBLE);
 			findViewById(R.id.will_cell).setVisibility(View.GONE);
@@ -525,14 +535,14 @@ public class LoginActivity extends Activity implements AdapterView.OnItemSelecte
 			findViewById(R.id.retain_cell).setVisibility(View.GONE);
 			findViewById(R.id.qos_cell).setVisibility(View.GONE);
 		} else if (Protocols.AMQP_PROTOCOL.getValue() == position) {
-			findViewById(R.id.username_cell).setVisibility(View.GONE);
-			findViewById(R.id.password_cell).setVisibility(View.GONE);
+			findViewById(R.id.username_cell).setVisibility(View.VISIBLE);
+			findViewById(R.id.password_cell).setVisibility(View.VISIBLE);
 			findViewById(R.id.client_id_cell).setVisibility(View.VISIBLE);
 			findViewById(R.id.host_cell).setVisibility(View.VISIBLE);
 			findViewById(R.id.port_cell).setVisibility(View.VISIBLE);
 			findViewById(R.id.settings_cell).setVisibility(View.VISIBLE);
-			findViewById(R.id.clean_session_cell).setVisibility(View.VISIBLE);
-			findViewById(R.id.keepalive_cell).setVisibility(View.GONE);
+			findViewById(R.id.clean_session_cell).setVisibility(View.GONE);
+			findViewById(R.id.keepalive_cell).setVisibility(View.VISIBLE);
 			findViewById(R.id.will_cell).setVisibility(View.GONE);
 			findViewById(R.id.will_topic_cell).setVisibility(View.GONE);
 			findViewById(R.id.retain_cell).setVisibility(View.GONE);

@@ -45,6 +45,8 @@ public interface IotProtocol extends Device, ConnectionListener {
     void closeConnection();
     void closeChannel();
 
+    void send(Message message);
+
     void connect();
     void subscribe(String topicName, QoS qos);
     void unsubscribe(String topicName, QoS qos);
@@ -55,4 +57,6 @@ public interface IotProtocol extends Device, ConnectionListener {
 
     boolean checkCreated();
     void executeTimer(TimerTask task, long period);
+
+    void timeout();
 }

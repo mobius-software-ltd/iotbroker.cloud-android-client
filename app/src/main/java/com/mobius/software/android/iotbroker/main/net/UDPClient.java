@@ -23,11 +23,9 @@ package com.mobius.software.android.iotbroker.main.net;
 import android.util.Log;
 
 import com.mobius.software.android.iotbroker.main.iot_protocols.classes.AbstractParser;
-import com.mobius.software.android.iotbroker.main.iot_protocols.classes.TCPDecoder;
 import com.mobius.software.android.iotbroker.main.iot_protocols.classes.Encoder;
 import com.mobius.software.android.iotbroker.main.iot_protocols.classes.Handler;
 import com.mobius.software.android.iotbroker.main.iot_protocols.classes.UDPDecoder;
-import com.mobius.software.android.iotbroker.main.iot_protocols.mqtt_sn.parser.avps.SNType;
 import com.mobius.software.android.iotbroker.main.listeners.ConnectionListener;
 import com.mobius.software.android.iotbroker.main.iot_protocols.classes.Message;
 import java.net.InetSocketAddress;
@@ -83,9 +81,7 @@ public class UDPClient implements InternetProtocol {
 
     @Override
     public void send(Message message) {
-        Log.v("TAG", " - try send: "+ SNType.valueOf(message.getType()).toString());
         if (datagramChannel != null && datagramChannel.isOpen()) {
-            Log.v("TAG", " - send: "+ SNType.valueOf(message.getType()).toString());
             datagramChannel.writeAndFlush(message);
         } else {
             Log.d("TAG", "Failed sending message " + message.getType());

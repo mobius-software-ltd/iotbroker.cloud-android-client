@@ -14,6 +14,7 @@ import com.mobius.software.android.iotbroker.main.iot_protocols.coap.headercoap.
 import com.mobius.software.android.iotbroker.main.iot_protocols.coap.headercoap.CoapHeader;
 import com.mobius.software.android.iotbroker.main.iot_protocols.coap.headercoap.CoapOptionType;
 import com.mobius.software.android.iotbroker.main.iot_protocols.coap.headercoap.CoapType;
+import com.mobius.software.android.iotbroker.main.iot_protocols.coap.headercoap.OptionParser;
 import com.mobius.software.android.iotbroker.main.iot_protocols.coap.parser.CoapParser;
 import com.mobius.software.android.iotbroker.main.iot_protocols.mqtt.parser.MQParser;
 import com.mobius.software.android.iotbroker.main.iot_protocols.mqtt.parser.avps.MQTopic;
@@ -30,13 +31,18 @@ import com.mobius.software.android.iotbroker.main.listeners.ClientStateListener;
 import com.mobius.software.android.iotbroker.main.listeners.DataBaseListener;
 import com.mobius.software.android.iotbroker.main.managers.ConnectionState;
 import com.mobius.software.android.iotbroker.main.managers.ConnectionTimerTask;
+import com.mobius.software.android.iotbroker.main.managers.MessageResendTimerTask;
+import com.mobius.software.android.iotbroker.main.net.DtlsClient;
+import com.mobius.software.android.iotbroker.main.net.InternetProtocol;
 import com.mobius.software.android.iotbroker.main.net.TCPClient;
 import com.mobius.software.android.iotbroker.main.net.UDPClient;
 import com.mobius.software.android.iotbroker.main.services.NetworkService;
 import com.mobius.software.android.iotbroker.main.utility.ConvertorUtil;
+import com.mobius.software.android.iotbroker.main.utility.FileManager;
 
 import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -67,33 +73,43 @@ public class CoapClient implements IotProtocol {
     private ConnectionState connectionState;
 
     private TimersMap timers;
-    private UDPClient client;
-    private String username;
-    private String password;
+    private InternetProtocol client;
     private String clientID;
     private boolean isClean;
     private int keepalive;
-    private Will will;
     private Context context;
     private ClientStateListener listener;
     private Timer timer = new Timer();
     private ConnectionTimerTask connectionCheckTask;
-
+    private boolean isSecure = false;
     private DataBaseListener dbListener;
     private static ConnectionState currentState;
+    private HashMap<Integer, String> topics;
 
-    public CoapClient(InetSocketAddress address, String username, String password, String clientID, boolean isClean,
-                      int keepalive, Will will, Context context) {
-
+    public CoapClient(InetSocketAddress address, String clientID, boolean isClean,
+                      int keepalive, Context context) {
         this.address = address;
-        this.username = username;
-        this.password = password;
         this.clientID = clientID;
         this.isClean = isClean;
         this.keepalive = keepalive;
-        this.will = will;
         this.context = context;
-        client = new UDPClient(address, workerThreads);
+        this.client = new UDPClient(address, workerThreads);
+        this.topics = new HashMap<>();
+    }
+
+    public CoapClient(InetSocketAddress address, String clientID, boolean isClean,
+                      int keepalive, String crtPath, String crtPass, Context context) {
+        this.isSecure = true;
+        this.address = address;
+        this.clientID = clientID;
+        this.isClean = isClean;
+        this.keepalive = keepalive;
+        this.context = context;
+        this.client = new DtlsClient(address, workerThreads);
+        ((DtlsClient)this.client).setSecure(this.isSecure);
+        ((DtlsClient)this.client).setKeyStore(FileManager.loadKeyStore(crtPath, crtPass));
+        ((DtlsClient)this.client).setKeyStorePassword(crtPass);
+        this.topics = new HashMap<>();
     }
 
     public void setListener(ClientStateListener listener) {
@@ -149,27 +165,26 @@ public class CoapClient implements IotProtocol {
         client.shutdown();
     }
 
+    @Override
+    public void send(Message message) {
+        client.send(message);
+    }
+
     public void connect() {
-        setState(client.isConnected() ? ConnectionState.CONNECTION_ESTABLISHED : ConnectionState.CONNECTION_FAILED);
+        setState(ConnectionState.CONNECTION_ESTABLISHED);
 
-        if (timers != null) {
+        if (timers != null)
             timers.stopAllTimers();
-            timers = null;
-        }
 
-        if (timers == null) {
-            timers = new TimersMap(this, client);
-            timers.startPingTimer(keepalive);
-        }
+        timers = new TimersMap(this, client);
+        timers.startPingTimer(keepalive);
     }
 
     public void disconnect() {
-
-        if (client.isConnected()) {
-            if (timers != null) {
-                timers.stopAllTimers();
-                timers = null;
-            }
+        this.closeConnection();
+        if (this.timer != null) {
+            this.timer.cancel();
+            this.timer = null;
         }
     }
 
@@ -182,32 +197,43 @@ public class CoapClient implements IotProtocol {
 
     public void subscribe(String topicName, QoS qos) {
 
+        byte qosNumber = (byte)(qos.getValue() >= 1 ? 1 : qos.getValue());
+
         CoapHeader coapMessage = new CoapHeader(CoapCode.GET, true, "");
-        coapMessage.addOption(CoapOptionType.NODE_ID, this.clientID);
-        coapMessage.addOption(CoapOptionType.ACCEPT, String.valueOf(qos.getValue()));
-        coapMessage.addOption(CoapOptionType.OBSERVE, Integer.toString(0));
-        coapMessage.addOption(CoapOptionType.URI_PATH, topicName);
-        coapMessage.setCoapType(CoapType.CONFIRMABLE);
+        coapMessage.addOption(OptionParser.encode(CoapOptionType.NODE_ID, this.clientID));
+        coapMessage.addOption(OptionParser.encode(CoapOptionType.ACCEPT, qosNumber));
+        coapMessage.addOption(OptionParser.encode(CoapOptionType.OBSERVE, 0));
+        coapMessage.addOption(OptionParser.encode(CoapOptionType.URI_PATH, topicName));
+        int number = timers.store(coapMessage);
         client.send(coapMessage);
+        this.topics.put(number, topicName);
     }
 
     public void unsubscribe(String topicName, QoS qos) {
 
+        byte qosNumber = (byte)(qos.getValue() >= 1 ? 1 : qos.getValue());
+
         CoapHeader coapMessage = new CoapHeader(CoapCode.GET, true, "");
-        coapMessage.addOption(CoapOptionType.NODE_ID, this.clientID);
-        coapMessage.addOption(CoapOptionType.OBSERVE, Integer.toString(1));
-        coapMessage.addOption(CoapOptionType.URI_PATH, topicName);
-        coapMessage.setCoapType(CoapType.CONFIRMABLE);
+        coapMessage.addOption(OptionParser.encode(CoapOptionType.NODE_ID, this.clientID));
+        coapMessage.addOption(OptionParser.encode(CoapOptionType.ACCEPT, qosNumber));
+        coapMessage.addOption(OptionParser.encode(CoapOptionType.OBSERVE, 1));
+        coapMessage.addOption(OptionParser.encode(CoapOptionType.URI_PATH, topicName));
+        int number = timers.store(coapMessage);
         client.send(coapMessage);
+        this.topics.put(number, topicName);
     }
 
     public void publish(String topicName, QoS qos, byte[] content, boolean retain, boolean dup) {
 
+        byte qosNumber = (byte)(qos.getValue() >= 1 ? 1 : qos.getValue());
+
         CoapHeader coapMessage = new CoapHeader(CoapCode.PUT, true, new String(content));
-        coapMessage.addOption(CoapOptionType.NODE_ID, this.clientID);
-        coapMessage.addOption(CoapOptionType.ACCEPT, String.valueOf(qos.getValue()));
-        coapMessage.addOption(CoapOptionType.URI_PATH, topicName);
+        coapMessage.addOption(OptionParser.encode(CoapOptionType.NODE_ID, this.clientID));
+        coapMessage.addOption(OptionParser.encode(CoapOptionType.ACCEPT, qosNumber));
+        coapMessage.addOption(OptionParser.encode(CoapOptionType.URI_PATH, topicName));
+        int number = timers.store(coapMessage);
         client.send(coapMessage);
+        this.topics.put(number, topicName);
     }
 
     public void reinit() {
@@ -217,7 +243,11 @@ public class CoapClient implements IotProtocol {
         if (client != null)
             client.shutdown();
 
-        client = new UDPClient(address, workerThreads);
+        if (this.isSecure) {
+            client = new DtlsClient(address, workerThreads);
+        } else {
+            client = new UDPClient(address, workerThreads);
+        }
     }
 
     public void closeConnection() {
@@ -225,9 +255,15 @@ public class CoapClient implements IotProtocol {
             timers.stopAllTimers();
 
         if (client != null) {
-            UDPClient currClient = client;
-            client = null;
-            currClient.shutdown();
+            if (this.isSecure) {
+                DtlsClient currClient = (DtlsClient)client;
+                client = null;
+                currClient.shutdown();
+            } else {
+                UDPClient currClient = (UDPClient)client;
+                client = null;
+                currClient.shutdown();
+            }
         }
     }
 
@@ -273,72 +309,82 @@ public class CoapClient implements IotProtocol {
         CoapType type = CoapType.valueOf(coapMessage.getType());
         CoapHeader message = (CoapHeader)coapMessage;
 
-        if (message.getType() == CoapCode.POST.getType() || message.getType() == CoapCode.PUT.getType()) {
-            String topic = message.getOptionValue(CoapOptionType.URI_PATH);
+        if ((message.getCode() == CoapCode.POST || message.getCode() == CoapCode.PUT) && type != CoapType.ACKNOWLEDGEMENT) {
+            Short qos = (Short) OptionParser.decode(CoapOptionType.ACCEPT, message.getOption(CoapOptionType.ACCEPT).getValue());
+            String topic = (String) OptionParser.decode(CoapOptionType.URI_PATH, message.getOption(CoapOptionType.URI_PATH).getValue());
             if (topic != null && topic.length() > 0) {
                 byte[] content = message.getPayload();
                 try {
                     String contentMessage = new String(content, "UTF-8");
-                    dbListener.addMessage(contentMessage, 0, true, topic);
+                    dbListener.addMessage(contentMessage, qos, true, topic);
                 } catch (UnsupportedEncodingException e) {
 
                 }
-
             } else {
-
                 CoapHeader ack = new CoapHeader(CoapCode.BAD_OPTION, false, "");
                 ack.addOption(CoapOptionType.CONTENT_FORMAT, "text/plain");
                 ack.setCoapType(CoapType.ACKNOWLEDGEMENT);
                 ack.setMessageID(message.getMessageID());
                 ack.setToken(message.getToken());
                 client.send(ack);
+                return;
             }
         }
 
         switch (type) {
             case CONFIRMABLE:
             {
-                message.setCoapType(CoapType.ACKNOWLEDGEMENT);
-                client.send(message);
+                CoapHeader ack = new CoapHeader(CoapCode.PUT, true, "");
+                ack.addOption(OptionParser.encode(CoapOptionType.NODE_ID, this.clientID));
+                ack.setCoapType(CoapType.ACKNOWLEDGEMENT);
+                ack.setMessageID(message.getMessageID());
+                ack.setToken(message.getToken());
+                client.send(ack);
             } break;
             case NON_CONFIRMABLE:
             {
-                timers.remove(ConvertorUtil.byteToInt(message.getToken()));
+                timers.remove(ConvertorUtil.bytesToInt(message.getToken()));
             } break;
             case ACKNOWLEDGEMENT:
             {
-                if (message.getCode() == CoapCode.CONTENT) {
-                    String topic = message.getOptionValue(CoapOptionType.URI_PATH);
-                    byte[] content = message.getPayload();
-                    try {
-                        String contentMessage = new String(content, "UTF-8");
-                        dbListener.addMessage(contentMessage, 0, true, topic);
-                    } catch (UnsupportedEncodingException e) {
-
-                    }
+                if (message.getToken() == null) {
+                    return;
                 }
-                if (message.getCode() == CoapCode.GET) {
-                    String observeOptionValue = message.getOptionValue(CoapOptionType.OBSERVE);
-                    if (observeOptionValue.length() > 0) {
-                        int value = Integer.parseInt(observeOptionValue);
-                        if (value == 0) {
-                            sendMessageIntent(MessageType.SUBACK);
-                        } else if (value == 1) {
-                            sendMessageIntent(MessageType.UNSUBACK);
+                MessageResendTimerTask timerItem = this.timers.remove(ConvertorUtil.bytesToInt(message.getToken()));
+                if (timerItem != null) {
+                    CoapHeader ack = (CoapHeader)timerItem.retrieveMessage();
+                    if (ack != null) {
+                        if (ack.getCode() == CoapCode.CONTENT) {
+                            Short qos = (Short) OptionParser.decode(CoapOptionType.ACCEPT, ack.getOption(CoapOptionType.ACCEPT).getValue());
+                            String topic = this.topics.get(ConvertorUtil.bytesToInt(ack.getToken()));
+                            byte[] content = ack.getPayload();
+                            try {
+                                String contentMessage = new String(content, "UTF-8");
+                                dbListener.addMessage(contentMessage, qos, true, topic);
+                            } catch (UnsupportedEncodingException e) {
+
+                            }
                         }
-                    }
-                } else {
-                    String topic = message.getOptionValue(CoapOptionType.URI_PATH);
-                    if (topic != null && topic.length() > 0) {
-                        //String topic = topicsArray.get(0);
-                        //byte[] content = ack.getPayload().getBytes();
-                        sendMessageIntent(MessageType.PUBACK);
+                        if (ack.getCode() == CoapCode.GET) {
+                            Short qos = (Short) OptionParser.decode(CoapOptionType.ACCEPT, ack.getOption(CoapOptionType.ACCEPT).getValue());
+                            Integer observe = (Integer) OptionParser.decode(CoapOptionType.OBSERVE, ack.getOption(CoapOptionType.OBSERVE).getValue());
+                            String topic = this.topics.get(ConvertorUtil.bytesToInt(ack.getToken()));
+                            if (observe != null) {
+                                if (observe == 0) {
+                                    dbListener.writeTopics(topic, qos);
+                                    sendMessageIntent(MessageType.SUBACK);
+                                } else if (observe == 1) {
+                                    dbListener.deleteTopics(new Text(topic));
+                                    sendMessageIntent(MessageType.UNSUBACK);
+                                }
+                            }
+                        }
                     }
                 }
             } break;
             case RESET:
             {
-                timers.remove(ConvertorUtil.byteToInt(message.getToken()));
+                timers.remove(ConvertorUtil.bytesToInt(message.getToken()));
             } break;
         }
     }
@@ -354,6 +400,11 @@ public class CoapClient implements IotProtocol {
 
     public void executeTimer(TimerTask task, long period) {
         timer.schedule(task, period);
+    }
+
+    @Override
+    public void timeout() {
+        this.closeConnection();
     }
 
     @Override

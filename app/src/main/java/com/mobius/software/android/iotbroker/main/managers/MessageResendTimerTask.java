@@ -24,10 +24,15 @@ import android.util.Log;
 
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import com.mobius.software.android.iotbroker.main.iot_protocols.IotProtocol;
 import com.mobius.software.android.iotbroker.main.iot_protocols.mqtt.MqttClient;
 import com.mobius.software.android.iotbroker.main.iot_protocols.classes.TimersMap;
+import com.mobius.software.android.iotbroker.main.iot_protocols.mqtt.parser.header.impl.Connect;
 import com.mobius.software.android.iotbroker.main.iot_protocols.mqtt_sn.parser.avps.SNType;
+import com.mobius.software.android.iotbroker.main.iot_protocols.mqtt_sn.parser.packet.impl.SNConnect;
+import com.mobius.software.android.iotbroker.main.iot_protocols.mqtt_sn.parser.packet.impl.SNPublish;
 import com.mobius.software.android.iotbroker.main.net.InternetProtocol;
 import com.mobius.software.android.iotbroker.main.net.TCPClient;
 import com.mobius.software.android.iotbroker.main.iot_protocols.mqtt.parser.avps.MessageType;
@@ -37,10 +42,13 @@ import com.mobius.software.android.iotbroker.main.services.NetworkService;
 
 public class MessageResendTimerTask extends TimerTask {
 
+	private static final Integer MAX_CONNECT_RESEND_TIMES = 5;
+
 	private Message message;
-	private InternetProtocol client;
+	private IotProtocol client;
 	private TimersMap timersMap;
 	private int period;
+	private int connectCount;
 
 	public int getPeriod() {
 		return period;
@@ -48,16 +56,27 @@ public class MessageResendTimerTask extends TimerTask {
 
 	private AtomicBoolean status = null;
 
-	public MessageResendTimerTask(Message message, InternetProtocol client, TimersMap timersMap, int period) {
+	public MessageResendTimerTask(Message message, IotProtocol client, TimersMap timersMap, int period) {
 		this.message = message;
 		this.client = client;
 		this.timersMap = timersMap;
 		this.period = period;
 		status = new AtomicBoolean(true);
+		connectCount = 0;
 	}
 
 	@Override
 	public void run() {
+
+		if (message instanceof Connect || message instanceof SNConnect) {
+			if (this.connectCount >= MAX_CONNECT_RESEND_TIMES) {
+				this.client.timeout();
+				this.connectCount = 0;
+				return;
+			}
+			this.connectCount += 1;
+		}
+
 		if (NetworkService.getStatus() != ConnectionState.CONNECTION_LOST) {
 
 			if (status.get()) {
@@ -66,6 +85,12 @@ public class MessageResendTimerTask extends TimerTask {
 					Publish publish = (Publish) message;
 					publish.setDup(true);
 				}
+
+				if (message instanceof SNPublish) {
+					SNPublish publish = (SNPublish) message;
+					publish.setDup(true);
+				}
+
 				client.send(message);
 				timersMap.refreshTimer(message);
 			}

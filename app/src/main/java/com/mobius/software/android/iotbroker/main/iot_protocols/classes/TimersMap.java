@@ -61,8 +61,8 @@ public class TimersMap {
 		this.client = client;
 	}
 
-	public void store(Message message) {
-		MessageResendTimerTask timer = new MessageResendTimerTask(message, listener, this, MESSAGE_RESEND_PERIOD);
+	public int store(Message message) {
+		MessageResendTimerTask timer = new MessageResendTimerTask(message, client, this, MESSAGE_RESEND_PERIOD);
 
 		Integer packetID = currCount.get();
 		do {
@@ -77,13 +77,15 @@ public class TimersMap {
 		countable.setPacketID(packetID);
 
 		client.executeTimer(timer, MESSAGE_RESEND_PERIOD);
+
+		return packetID;
 	}
 
 	public void refreshTimer(Message message) {
 
 		int period = MESSAGE_RESEND_PERIOD;
 
-		MessageResendTimerTask timer = new MessageResendTimerTask(message, listener, this, period);
+		MessageResendTimerTask timer = new MessageResendTimerTask(message, client, this, period);
 
 		if ((message.getType() == MessageType.CONNECT.getNum() && message.getProtocol() == Protocols.MQTT_PROTOCOL) ||
 				(message.getType() == SNType.CONNECT.getValue() && message.getProtocol() == Protocols.MQTT_SN_PROTOCOL)) {
@@ -95,7 +97,7 @@ public class TimersMap {
 				(message.getType() == HeaderCodes.PING.getType() && message.getProtocol() == Protocols.AMQP_PROTOCOL)) {
 			//ping.stop();
 			period = ping.getPeriod() * 1000;
-			ping = new MessageResendTimerTask(message, listener, this, ping.getPeriod());
+			ping = new MessageResendTimerTask(message, client, this, ping.getPeriod());
 		} else {
 			CountableMessage countable = (CountableMessage) message;
 			MessageResendTimerTask oldTimer = timersMap.put(countable.getPacketID(), timer);
@@ -131,7 +133,7 @@ public class TimersMap {
 	}
 
 	public void storeConnectTimer(Message message) {
-		MessageResendTimerTask timer = new MessageResendTimerTask(message, listener, this, MESSAGE_RESEND_PERIOD);
+		MessageResendTimerTask timer = new MessageResendTimerTask(message, client, this, MESSAGE_RESEND_PERIOD);
 		if (connect != null)
 			connect.stop();
 
@@ -146,7 +148,7 @@ public class TimersMap {
 	}
 
 	public void startPingTimer(int keepalive) {
-		MessageResendTimerTask timer = new MessageResendTimerTask(client.getPingreqMessage(), listener, this, keepalive);
+		MessageResendTimerTask timer = new MessageResendTimerTask(client.getPingreqMessage(), client, this, keepalive);
 		if (ping != null)
 			ping.stop();
 		ping = timer;

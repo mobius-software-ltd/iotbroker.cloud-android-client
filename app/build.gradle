@@ -8,6 +8,11 @@ android {
         applicationId "com.mobius.software.iotbroker.androidclient"
         minSdkVersion 17
         targetSdkVersion 26
+        multiDexEnabled true
+
+    }
+    dexOptions {
+        javaMaxHeapSize "2g"
     }
 
     buildTypes {
@@ -16,7 +21,9 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
         }
     }
-
+    lintOptions {
+        abortOnError false
+    }
     packagingOptions {
         exclude 'META-INF/DEPENDENCIES.txt'
         exclude 'META-INF/LICENSE.txt'
@@ -32,13 +39,21 @@ android {
 }
 
 dependencies {
+
+    compile files('libs/netty-all-4.1.6.Final.jar')
+
     compile 'de.greenrobot:greendao:2.1.0'
     compile 'com.actionbarsherlock:actionbarsherlock:4.4.0@aar'
     compile 'com.android.support:recyclerview-v7:26.1.0'
+
+    compile('com.mobius-software.iot:dtls-async-client:1.0.7') {
+        exclude group: 'commons-logging', module: 'commons-logging'
+        exclude group: 'log4j'
+        exclude group: 'io.netty'
+    }
 
     compile 'com.fasterxml.jackson.core:jackson-core:2.9.5'
     compile 'com.fasterxml.jackson.core:jackson-annotations:2.9.5'
     compile 'com.fasterxml.jackson.core:jackson-databind:2.9.5'
 
-    compile files('libs/netty-all-4.1.6.Final.jar')
 }

@@ -35,8 +35,6 @@ public class AMQPProtoHeader extends AMQPHeader {
 
 	public AMQPProtoHeader(int protocolId) {
 		super(null);
-		if (protocolId != 0 && protocolId != 3)
-			throw new IllegalArgumentException();
 		this.protocolId = protocolId;
 	}
 

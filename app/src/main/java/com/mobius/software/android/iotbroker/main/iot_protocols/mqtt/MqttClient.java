@@ -169,6 +169,11 @@ public class MqttClient implements IotProtocol {
 		client.shutdown();
 	}
 
+	@Override
+	public void send(Message message) {
+		client.send(message);
+	}
+
 	public void connect() {
 		setState(ConnectionState.CONNECTING);
 		Connect connect = new Connect(username, password, clientID, isClean, keepalive, will);
@@ -457,6 +462,11 @@ public class MqttClient implements IotProtocol {
 
 	public void executeTimer(TimerTask task, long period) {
 		timer.schedule(task, period);
+	}
+
+	@Override
+	public void timeout() {
+
 	}
 
 	@Override

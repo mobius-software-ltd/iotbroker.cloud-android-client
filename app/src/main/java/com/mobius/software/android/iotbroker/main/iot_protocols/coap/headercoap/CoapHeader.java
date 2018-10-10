@@ -93,6 +93,16 @@ public class CoapHeader extends CountableMessage {
         return null;
     }
 
+	public CoapOption getOption(CoapOptionType option) {
+		for (int i = 0; i < this.options.size(); i++) {
+			CoapOption item = this.options.get(i);
+			if (item.getNumber() == option.getType()) {
+				return item;
+			}
+		}
+		return null;
+	}
+
 	@Override
 	public int getLength() {
 		return 0;
@@ -169,7 +179,7 @@ public class CoapHeader extends CountableMessage {
 
     public void setPacketID(Integer packetID) {
 		this.messageID = packetID;
-		this.token = ConvertorUtil.intToByte(packetID);
+		this.token = String.valueOf(packetID).getBytes();
 		this.packetID = packetID;
 	}
 

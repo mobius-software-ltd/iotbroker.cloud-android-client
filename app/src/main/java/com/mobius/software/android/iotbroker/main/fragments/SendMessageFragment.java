@@ -27,6 +27,7 @@ import android.app.Fragment;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -144,9 +145,9 @@ public class SendMessageFragment extends Fragment {
 		Intent startServiceIntent = new Intent(getActivity(), NetworkService.class);
 		startServiceIntent.putExtra(ApplicationSettings.PARAM_CONTENT, content);
 		startServiceIntent.putExtra(ApplicationSettings.PARAM_TOPIC, topic);
-		startServiceIntent.putExtra(ApplicationSettings.PARAM_IS_RETAIN, Boolean.toString(isRetain));
-		startServiceIntent.putExtra(ApplicationSettings.PARAM_QOS,Integer.toString(qos));
-		startServiceIntent.putExtra(ApplicationSettings.PARAM_IS_DUBLICATE, Boolean.toString(isDublicate));
+		startServiceIntent.putExtra(ApplicationSettings.PARAM_IS_RETAIN, isRetain);
+		startServiceIntent.putExtra(ApplicationSettings.PARAM_QOS, qos);
+		startServiceIntent.putExtra(ApplicationSettings.PARAM_IS_DUBLICATE, isDublicate);
 		startServiceIntent.setAction(ApplicationSettings.ACTION_PUBLISH);
 		getActivity().startService(startServiceIntent);
 	}
