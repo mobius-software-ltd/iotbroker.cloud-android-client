@@ -35,6 +35,10 @@ public class Publish extends CountableMessage
 	private boolean retain;
 	private boolean dup;
 
+	public Publish() {
+		super();
+	}
+
 	public Publish(MQTopic topic, byte[] content, boolean retain, boolean dup)
 	{
 		this(null, topic, content, retain, dup);

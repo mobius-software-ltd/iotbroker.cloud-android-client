@@ -30,6 +30,10 @@ public class Subscribe extends CountableMessage
 {
 	private MQTopic[] topics;
 
+	public Subscribe() {
+		super();
+	}
+
 	public Subscribe(MQTopic[] topics)
 	{
 		this(null, topics);

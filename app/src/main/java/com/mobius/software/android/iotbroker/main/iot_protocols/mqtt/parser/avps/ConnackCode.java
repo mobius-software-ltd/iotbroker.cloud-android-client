@@ -20,6 +20,8 @@ package com.mobius.software.android.iotbroker.main.iot_protocols.mqtt.parser.avp
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 import java.util.HashMap;
@@ -52,6 +54,7 @@ public enum ConnackCode
 		num = leg;
 	}
 
+	@JsonCreator
 	public static ConnackCode valueOf(int type)
 	{
 		return map.get(type);

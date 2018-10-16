@@ -27,6 +27,10 @@ import com.mobius.software.android.iotbroker.main.iot_protocols.classes.Device;
 
 public class Pubrel extends CountableMessage
 {
+	public Pubrel() {
+		super();
+	}
+
 	public Pubrel(Integer packetID)
 	{
 		super(packetID);

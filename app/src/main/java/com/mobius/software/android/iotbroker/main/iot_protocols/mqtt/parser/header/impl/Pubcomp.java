@@ -28,6 +28,10 @@ import com.mobius.software.android.iotbroker.main.iot_protocols.classes.Message;
 
 public class Pubcomp extends CountableMessage
 {
+	public Pubcomp() {
+		super();
+	}
+
 	public Pubcomp(Integer packetID)
 	{
 		this.packetID = packetID;

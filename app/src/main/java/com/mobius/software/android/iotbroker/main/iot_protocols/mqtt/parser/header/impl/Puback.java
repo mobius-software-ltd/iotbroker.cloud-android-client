@@ -28,6 +28,10 @@ import com.mobius.software.android.iotbroker.main.iot_protocols.classes.Message;
 
 public class Puback extends CountableMessage
 {
+	public Puback() {
+		super();
+	}
+
 	public Puback(Integer packetID)
 	{
 		this.packetID = packetID;

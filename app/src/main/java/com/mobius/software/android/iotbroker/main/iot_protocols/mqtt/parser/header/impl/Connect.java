@@ -41,6 +41,10 @@ public class Connect implements Message
 
 	private Will will;
 
+	public Connect() {
+		super();
+	}
+
 	public Connect(String username, String password, String clientID, boolean isClean, int keepalive, Will will)
 	{
 		this.username = username;

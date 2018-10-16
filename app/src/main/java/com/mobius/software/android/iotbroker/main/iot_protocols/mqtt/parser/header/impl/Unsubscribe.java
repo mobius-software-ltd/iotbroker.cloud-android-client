@@ -33,6 +33,10 @@ public class Unsubscribe extends CountableMessage
 {
 	private Text[] topics;
 
+	public Unsubscribe() {
+		super();
+	}
+
 	public Unsubscribe(Text[] topics)
 	{
 		this(null, topics);

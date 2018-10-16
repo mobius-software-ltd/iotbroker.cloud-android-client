@@ -2,6 +2,8 @@ package com.mobius.software.android.iotbroker.main.iot_protocols.websocket;
 
 import android.content.Context;
 import android.content.Intent;
+import android.util.Log;
+
 import com.mobius.software.android.iotbroker.main.CoreLogicException;
 import com.mobius.software.android.iotbroker.main.base.ApplicationSettings;
 import com.mobius.software.android.iotbroker.main.iot_protocols.IotProtocol;

@@ -34,6 +34,10 @@ public class Suback extends CountableMessage
 {
 	private List<SubackCode> returnCodes = new ArrayList<SubackCode>();
 
+	public Suback() {
+		super();
+	}
+
 	public Suback(Integer packetID, List<SubackCode> returnCodes)
 	{
 		this.packetID = packetID;

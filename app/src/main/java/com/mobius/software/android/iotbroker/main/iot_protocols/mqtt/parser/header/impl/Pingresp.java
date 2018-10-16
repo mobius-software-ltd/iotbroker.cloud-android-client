@@ -27,6 +27,10 @@ import com.mobius.software.android.iotbroker.main.iot_protocols.classes.Message;
 
 public class Pingresp implements Message
 {
+	public Pingresp() {
+		super();
+	}
+
 	@Override
 	public int getLength()
 	{

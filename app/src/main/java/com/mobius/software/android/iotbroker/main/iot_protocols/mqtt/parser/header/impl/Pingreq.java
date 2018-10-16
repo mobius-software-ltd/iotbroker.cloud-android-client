@@ -27,6 +27,10 @@ import com.mobius.software.android.iotbroker.main.iot_protocols.classes.Message;
 
 public class Pingreq implements Message
 {
+	public Pingreq() {
+		super();
+	}
+
 	@Override
 	public int getLength()
 	{

@@ -20,6 +20,7 @@ package com.mobius.software.android.iotbroker.main.iot_protocols.mqtt.parser.hea
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.mobius.software.android.iotbroker.main.iot_protocols.classes.Protocols;
 import com.mobius.software.android.iotbroker.main.iot_protocols.mqtt.parser.avps.ConnackCode;
 import com.mobius.software.android.iotbroker.main.iot_protocols.mqtt.parser.avps.MessageType;
@@ -30,6 +31,10 @@ public class Connack implements Message
 {
 	private boolean sessionPresent;
 	private ConnackCode returnCode;
+
+	public Connack() {
+		super();
+	}
 
 	public Connack(boolean sessionPresent, ConnackCode returnCode)
 	{

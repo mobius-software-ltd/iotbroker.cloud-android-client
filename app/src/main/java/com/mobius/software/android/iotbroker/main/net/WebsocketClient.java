@@ -12,6 +12,7 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -199,7 +200,7 @@ public class WebsocketClient implements InternetProtocol {
     private URI getUri() {
 
         String type = this.isSecure ? "wss" : "ws";
-        String url = type + "//:" + this.address.getHostName() + ":" + String.valueOf(this.address.getPort());
+        String url = type + "://" + this.address.getHostName() + ":" + String.valueOf(this.address.getPort()) + "/" + type;
         URI uri;
         try {
             uri = new URI(url);

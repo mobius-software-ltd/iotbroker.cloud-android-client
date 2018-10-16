@@ -28,6 +28,10 @@ import com.mobius.software.android.iotbroker.main.iot_protocols.classes.Message;
 
 public class Unsuback extends CountableMessage
 {
+	public Unsuback() {
+		super();
+	}
+
 	public Unsuback(Integer packetID)
 	{
 		this.packetID = packetID;
