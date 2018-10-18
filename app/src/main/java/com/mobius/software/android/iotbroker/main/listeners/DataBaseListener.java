@@ -21,7 +21,10 @@ package com.mobius.software.android.iotbroker.main.listeners;
  */
 
 import com.mobius.software.android.iotbroker.main.dal.Accounts;
+import com.mobius.software.android.iotbroker.main.dal.Topics;
 import com.mobius.software.android.iotbroker.main.iot_protocols.mqtt.parser.avps.Text;
+
+import java.util.List;
 
 public interface DataBaseListener {
 
@@ -38,4 +41,5 @@ public interface DataBaseListener {
 
 	boolean isTopicExist(String topicName);
 
+	List<Topics> topicsForUser();
 }

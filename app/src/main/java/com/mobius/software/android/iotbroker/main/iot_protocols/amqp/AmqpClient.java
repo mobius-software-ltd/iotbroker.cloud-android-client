@@ -6,6 +6,7 @@ import android.util.Log;
 
 import com.mobius.software.android.iotbroker.main.CoreLogicException;
 import com.mobius.software.android.iotbroker.main.base.ApplicationSettings;
+import com.mobius.software.android.iotbroker.main.dal.Topics;
 import com.mobius.software.android.iotbroker.main.iot_protocols.IotProtocol;
 import com.mobius.software.android.iotbroker.main.iot_protocols.amqp.classes.AMQPTransferMap;
 import com.mobius.software.android.iotbroker.main.iot_protocols.amqp.classes.codes.HeaderCodes;
@@ -134,6 +135,8 @@ public class AmqpClient implements IotProtocol {
     public AmqpClient(InetSocketAddress address, String username, String password, String clientID, boolean isClean,
                            int keepalive, Will will, Context context) {
 
+
+
         this.address = address;
         this.username = username;
         this.password = password;
@@ -146,7 +149,7 @@ public class AmqpClient implements IotProtocol {
         this.client.setSecure(false);
         this.isSASLСonfirm = false;
         this.chanel = 0;
-        this.nextHandle = 0L;
+        this.nextHandle = 1L;
     }
 
     public AmqpClient(InetSocketAddress address, String username, String password, String clientID, boolean isClean,
@@ -229,7 +232,7 @@ public class AmqpClient implements IotProtocol {
         setState(ConnectionState.CONNECTING);
         timers = new TimersMap(this, client);
 
-        AMQPProtoHeader header = new AMQPProtoHeader(0);
+        AMQPProtoHeader header = new AMQPProtoHeader(3);
         client.send(header);
     }
 
@@ -264,6 +267,7 @@ public class AmqpClient implements IotProtocol {
 
         AMQPAttach attach = new AMQPAttach();
         attach.setChannel(this.chanel);
+        attach.setName(topicName);
         attach.setHandle(currentHandler);
         attach.setRole(RoleCodes.RECEIVER);
         attach.setSndSettleMode(SendCodes.MIXED);
@@ -287,7 +291,7 @@ public class AmqpClient implements IotProtocol {
             this.client.send(detach);
         } else {
             this.dbListener.deleteTopics(new Text(topicName));
-            //sendMessageIntent(MessageType.UNSUBACK);
+            sendMessageIntent(MessageType.UNSUBACK);
         }
     }
 
@@ -295,8 +299,11 @@ public class AmqpClient implements IotProtocol {
 
         AMQPTransfer transfer = new AMQPTransfer();
         transfer.setChannel(this.chanel);
-        transfer.setDeliveryId(0L);
-        transfer.setSettled(false);
+        if (qos == QoS.AT_MOST_ONCE) {
+            transfer.setSettled(true);
+        } else {
+            transfer.setSettled(false);
+        }
         transfer.setMore(false);
         transfer.setMessageFormat(new AMQPMessageFormat(0));
 
@@ -316,6 +323,8 @@ public class AmqpClient implements IotProtocol {
             Long handle = this.usedOutgoingMappings.get(topicName);
             transfer.setHandle(handle);
             this.timers.store(transfer);
+            if(transfer.getSettled() != null && transfer.getSettled())
+                timers.remove(transfer.getDeliveryId().intValue());
             this.client.send(transfer);
         } else {
             Long currentHandler = this.nextHandle++;
@@ -331,6 +340,7 @@ public class AmqpClient implements IotProtocol {
             attach.setHandle(currentHandler);
             attach.setRole(RoleCodes.SENDER);
             attach.setSndSettleMode(SendCodes.MIXED);
+            attach.setInitialDeliveryCount(0L);
             AMQPSource source = new AMQPSource();
             source.setAddress(topicName);
             source.setDurable(TerminusDurability.NONE);
@@ -390,7 +400,7 @@ public class AmqpClient implements IotProtocol {
 
     private void writeTopics(String topicName, int qos) {
         if (dbListener.writeTopics(topicName, qos)) {
-            sendMessageIntent(HeaderCodes.FLOW);
+            //sendMessageIntent(HeaderCodes.FLOW);
         }
     }
 
@@ -410,19 +420,20 @@ public class AmqpClient implements IotProtocol {
                 if (isSASLСonfirm && protoHeader.getProtocolId() == 0) {
                     chanel = protoHeader.getChannel();
                     AMQPOpen open = new AMQPOpen();
-                    open.setContainerId(UUID.randomUUID().toString());
-                    open.setChannel(protoHeader.getChannel());
+                    open.setChannel(chanel);
+                    open.setContainerId(clientID);
+                    open.setIdleTimeout((long) keepalive * 1000);
                     client.send(open);
-                } else {
-                    this.timers.stopAllTimers();
-                    setState(ConnectionState.CONNECTION_FAILED);
                 }
             } break;
             case OPEN:
             {
                 AMQPOpen open = (AMQPOpen)message;
-                int idleTimeoutInSeconds = open.getIdleTimeout().intValue() / 1000;
-                timers.startPingTimer(idleTimeoutInSeconds);
+                if (open.getIdleTimeout() == null) {
+                    timers.startPingTimer(keepalive);
+                } else {
+                    timers.startPingTimer(open.getIdleTimeout().intValue() / 1000);
+                }
 
                 AMQPBegin begin = new AMQPBegin();
                 begin.setChannel(chanel);
@@ -434,9 +445,11 @@ public class AmqpClient implements IotProtocol {
             case BEGIN:
             {
                 setState(ConnectionState.CONNECTION_ESTABLISHED);
-
-                if (this.isClean) {
-                    this.cleanCurrentSession();
+                for (Topics topic : dbListener.topicsForUser()) {
+                    long currentHandler = this.nextHandle++;
+                    this.usedIncomingMappings.put(topic.getTopicName(), currentHandler);
+                    this.usedMappings.put(currentHandler, topic.getTopicName());
+                    this.subscribe(topic.getTopicName(), QoS.valueOf(topic.getQos()));
                 }
             } break;
             case ATTACH:
@@ -444,7 +457,7 @@ public class AmqpClient implements IotProtocol {
                 AMQPAttach attach = (AMQPAttach)message;
 
                 if (attach.getRole() != null) {
-                    if (attach.getRole() == RoleCodes.SENDER) {
+                    if (attach.getRole() == RoleCodes.RECEIVER) {
                         // publish
                         if (attach.getHandle() != null) {
                             for (int i = 0; i < this.pendingMessages.size(); i++) {
@@ -453,12 +466,25 @@ public class AmqpClient implements IotProtocol {
                                     pendingMessages.remove(i);
                                     i--;
                                     this.timers.store(currentMessage);
+                                    if (currentMessage.getSettled() != null && currentMessage.getSettled())
+                                        if (currentMessage.getDeliveryId() != null) {
+                                            int deliveryId = currentMessage.getDeliveryId().intValue();
+                                            timers.remove(deliveryId);
+                                        }
                                     this.client.send(currentMessage);
                                 }
                             }
                         }
                     } else {
                         // subscribe
+                        usedIncomingMappings.put(attach.getName(), attach.getHandle());
+                        usedMappings.put( attach.getHandle(), attach.getName());
+
+                        int qos = QoS.AT_LEAST_ONCE.getValue();
+                        this.dbListener.writeTopics(attach.getName(), qos);
+
+                        sendMessageIntent(MessageType.SUBACK);
+
                     }
                 }
             } break;
@@ -475,7 +501,7 @@ public class AmqpClient implements IotProtocol {
                 AMQPTransfer transfer = (AMQPTransfer)message;
 
                 QoS qos = QoS.AT_LEAST_ONCE;
-                if (transfer.getSettled()) {
+                if (transfer.getSettled() != null && transfer.getSettled()) {
                     qos = QoS.AT_MOST_ONCE;
                 } else {
                     AMQPDisposition disposition = new AMQPDisposition();
@@ -496,9 +522,9 @@ public class AmqpClient implements IotProtocol {
                 if (!dbListener.isTopicExist(topicName))
                     return;
 
-                String content = new String(transfer.getData().getValue().getBytes());
+                String content = new String(((AMQPData)transfer.getData()).getData());
                 this.dbListener.addMessage(content, qos.getValue(), true, topicName);
-                //sendMessageIntent(MessageType.PUBLISH);
+                sendMessageIntent(MessageType.PUBLISH);
 
             } break;
             case DISPOSITION:
@@ -506,10 +532,13 @@ public class AmqpClient implements IotProtocol {
                 AMQPDisposition disposition = (AMQPDisposition)message;
 
                 Long first = disposition.getFirst();
-                Long second = disposition.getLast();
-                if (first != null && second != null) {
-                    for (Long i = first; i < second; i++) {
-                        this.timers.remove(i.intValue());
+                Long last = disposition.getLast();
+                if(first != null) {
+                    if(last != null) {
+                        for (Long i = first; i < last; i++)
+                            timers.remove(i.intValue());
+                    } else {
+                        timers.remove(first.intValue());
                     }
                 }
             } break;
@@ -521,6 +550,8 @@ public class AmqpClient implements IotProtocol {
                     if (this.usedOutgoingMappings.containsKey(topicName)) {
                         this.usedOutgoingMappings.remove(topicName);
                     }
+                    this.dbListener.deleteTopics(new Text(topicName));
+                    sendMessageIntent(MessageType.UNSUBACK);
                 }
             } break;
             case END:
@@ -599,12 +630,8 @@ public class AmqpClient implements IotProtocol {
                 SASLOutcome outcome = (SASLOutcome)message;
                 if (outcome.getOutcomeCode() == OutcomeCodes.OK) {
                     this.isSASLСonfirm = true;
-                    chanel = outcome.getChannel();
-                    AMQPOpen open = new AMQPOpen();
-                    open.setContainerId(this.clientID);
-                    open.setIdleTimeout((long) this.keepalive);
-                    open.setChannel(outcome.getChannel());
-                    client.send(open);
+                    AMQPProtoHeader header = new AMQPProtoHeader(0);
+                    client.send(header);
                 } else if (outcome.getOutcomeCode() == OutcomeCodes.AUTH) {
                     throw new CoreLogicException("received invalid message outcome(AUTH)");
                 } else if (outcome.getOutcomeCode() == OutcomeCodes.SYS) {
@@ -622,11 +649,11 @@ public class AmqpClient implements IotProtocol {
         }
     }
 
-    public void sendMessageIntent(HeaderCodes messageType) {
+    public void sendMessageIntent(MessageType messageType) {
 
         Intent startServiceIntent = new Intent(context, NetworkService.class);
 
-        startServiceIntent.putExtra(ApplicationSettings.PARAM_MESSAGETYPE, Integer.toString(messageType.getType()));
+        startServiceIntent.putExtra(ApplicationSettings.PARAM_MESSAGETYPE, Integer.toString(messageType.getNum()));
         startServiceIntent.setAction(ApplicationSettings.ACTION_MESSAGE_RECEIVED);
         context.startService(startServiceIntent);
     }

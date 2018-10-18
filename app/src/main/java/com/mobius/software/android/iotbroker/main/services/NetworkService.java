@@ -235,7 +235,7 @@ public class NetworkService extends Service implements NetworkStateListener, Cli
 
     @Override
     public void onDestroy() {
-        deActivateService();
+		deActivateService();
         instance = null;
     }
 

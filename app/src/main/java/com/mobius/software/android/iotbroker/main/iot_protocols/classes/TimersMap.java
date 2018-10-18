@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import com.mobius.software.android.iotbroker.main.iot_protocols.IotProtocol;
 import com.mobius.software.android.iotbroker.main.iot_protocols.amqp.classes.codes.HeaderCodes;
+import com.mobius.software.android.iotbroker.main.iot_protocols.amqp.classes.headeramqp.AMQPTransfer;
 import com.mobius.software.android.iotbroker.main.iot_protocols.coap.headercoap.CoapCode;
 import com.mobius.software.android.iotbroker.main.iot_protocols.coap.headercoap.CoapHeader;
 import com.mobius.software.android.iotbroker.main.iot_protocols.coap.headercoap.CoapOptionType;
@@ -73,8 +74,13 @@ public class TimersMap {
 				packetID = FIRST_ID;
 		} while (timersMap.putIfAbsent(packetID, timer) != null);
 
-		CountableMessage countable = (CountableMessage) message;
-		countable.setPacketID(packetID);
+		if (message instanceof CountableMessage) {
+			CountableMessage countable = (CountableMessage) message;
+			countable.setPacketID(packetID);
+		} else if (message instanceof AMQPTransfer) {
+			AMQPTransfer transfer = (AMQPTransfer) message;
+			transfer.setDeliveryId((long)packetID);
+		}
 
 		client.executeTimer(timer, MESSAGE_RESEND_PERIOD);
 
@@ -99,10 +105,19 @@ public class TimersMap {
 			period = ping.getPeriod() * 1000;
 			ping = new MessageResendTimerTask(message, client, this, ping.getPeriod());
 		} else {
-			CountableMessage countable = (CountableMessage) message;
-			MessageResendTimerTask oldTimer = timersMap.put(countable.getPacketID(), timer);
-			if (oldTimer != null)
-				oldTimer.stop();
+			if (message instanceof CountableMessage) {
+				CountableMessage countable = (CountableMessage) message;
+				MessageResendTimerTask oldTimer = timersMap.put(countable.getPacketID(), timer);
+				if (oldTimer != null)
+					oldTimer.stop();
+			} else if (message instanceof AMQPTransfer) {
+				AMQPTransfer m = (AMQPTransfer) message;
+				if (m.getDeliveryId() != null) {
+					MessageResendTimerTask oldTimer = timersMap.put(m.getDeliveryId().intValue(), timer);
+					if (oldTimer != null)
+						oldTimer.stop();
+				}
+			}
 		}
 
 		client.executeTimer(timer, period);

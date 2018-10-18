@@ -20,6 +20,7 @@ package com.mobius.software.android.iotbroker.main.dal;
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.mobius.software.android.iotbroker.main.base.DaoObject;
@@ -173,5 +174,17 @@ public class DataBaseManager implements DataBaseListener {
 
 		return false;
 
+	}
+
+	@Override
+	public List<Topics> topicsForUser() {
+		Accounts activeAccounts = getActiveAccount();
+
+		TopicsDao topicDao = ((TopicsDao) DaoObject.getDao(context, DaoType.TopicsDao));
+
+		QueryBuilder<Topics> queryBuilder = topicDao.queryBuilder();
+		queryBuilder.where(com.mobius.software.android.iotbroker.main.dal.TopicsDao.Properties.AccountID.eq(activeAccounts.getId()));
+
+		return new ArrayList<>(queryBuilder.list());
 	}
 }

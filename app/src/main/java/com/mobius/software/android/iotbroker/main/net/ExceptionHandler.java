@@ -70,20 +70,19 @@ public class ExceptionHandler extends ChannelDuplexHandler {
 					@Override
 					public void operationComplete(ChannelFuture future) {
 						if (!future.isSuccess())
-							Log.d("", "an error occured while connect");
+							Log.i("ERROR", "an error occured while connect");
 					}
 				}));
 	}
 
 	@Override
-	public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) {
+	public void write(ChannelHandlerContext ctx, final Object msg, ChannelPromise promise) {
 		ctx.write(msg, promise.addListener(new ChannelFutureListener() {
 			@Override
 			public void operationComplete(ChannelFuture future) {
 				if (!future.isSuccess())
 				{
-					Log.d("", "an error occured while write");
-					
+					Log.i("ERROR", "an error occured while write");
 					if(listener!=null)
 						listener.writeError();
 				}
