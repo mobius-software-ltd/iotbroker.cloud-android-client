@@ -1,5 +1,6 @@
 package com.mobius.software.android.iotbroker.main.dal;
 
+import java.io.Serializable;
 import java.util.List;
 import com.mobius.software.android.iotbroker.main.dal.DaoSession;
 import de.greenrobot.dao.DaoException;
@@ -8,7 +9,7 @@ import de.greenrobot.dao.DaoException;
 /**
  * Entity mapped to table "ACCOUNTS".
  */
-public class Accounts {
+public class Accounts implements Serializable {
 
     private Long id;
     private Integer protocolType;

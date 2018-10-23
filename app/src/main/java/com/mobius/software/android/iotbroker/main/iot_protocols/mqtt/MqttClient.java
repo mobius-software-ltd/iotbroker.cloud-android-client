@@ -289,7 +289,6 @@ public class MqttClient implements IotProtocol {
 
 	private void cleanCurrentSession() {
 		dbListener.clearTopicByActiveAccount();
-		dbListener.deleteMessages();
 	}
 
 	private void writeTopics(String topicName, int qos) {
@@ -398,7 +397,10 @@ public class MqttClient implements IotProtocol {
 
 				for (SubackCode code : suback.getReturnCodes()) {
 					if (code == SubackCode.FAILURE) {
-						throw new CoreLogicException("received invalid message suback");
+						Intent startServiceIntent = new Intent();
+						startServiceIntent.putExtra(ApplicationSettings.PARAM_CONTENT, "Wrong topic name");
+						startServiceIntent.setAction(ApplicationSettings.ALERT_MESSAGE);
+						context.sendBroadcast(startServiceIntent);
 					}
 					else {
 						Subscribe subscribe = (Subscribe) timer.retrieveMessage();

@@ -48,7 +48,7 @@
                 android:ems="10"
                 android:focusable="false"
                 android:inputType="none"
-                android:minWidth=" 192.67dp"
+                android:minWidth="192.67dp"
                 android:onClick="showAddContent" >
             </EditText>
         </LinearLayout>
@@ -137,7 +137,7 @@
                 android:layout_weight="5"
                 android:ems="10"
                 android:entries="@array/qos_array"
-                android:minWidth=" 192dp" />
+                android:minWidth="192dp" />
         </LinearLayout>
 
         <View

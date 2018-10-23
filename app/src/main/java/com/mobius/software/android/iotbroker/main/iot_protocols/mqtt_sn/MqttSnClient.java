@@ -309,7 +309,6 @@ public class MqttSnClient implements IotProtocol {
 
     private void cleanCurrentSession() {
         dbListener.clearTopicByActiveAccount();
-        dbListener.deleteMessages();
     }
 
     private void writeTopics(String topicName, int qos) {

@@ -38,6 +38,8 @@ public class ApplicationSettings {
 	public static final String PARAM_IS_VISIBLE = "PARAM_IS_VISIBLE";
 	public static final String PARAM_MESSAGETYPE = "com.mobius.software.android.iotbroker.MESSAGETYPE_PARAM";
 
+	public static final String PARAM_ACCOUNTS = "com.mobius.software.android.iotbroker.PARAM_ACCOUNTS";
+
 	public static final String PARAM_QOS = "com.mobius.software.android.iotbroker.ACTION_SUBSCRIBE.PARAM_QOS";
 	public static final String PARAM_TOPIC_NAME = "com.mobius.software.android.iotbroker.ACTION_SUBSCRIBE.PARAM_TOPIC_NAME";
 
@@ -63,5 +65,7 @@ public class ApplicationSettings {
 	public static final String NETWORK_CHANGED = "com.mobius.software.android.iotbroker.NETWORK_CHANGED";
 	public static final String NETWORK_STATUS_CHANGE = "com.mobius.software.android.iotbroker.NETWORK_STATUS_CHANGE";
 	public static final String STATE_CHANGED = "com.mobius.software.android.iotbroker.stateChanged";
+
+	public static final String ALERT_MESSAGE = "com.mobius.software.android.iotbroker.ALERT_MESSAGE";
 
 }

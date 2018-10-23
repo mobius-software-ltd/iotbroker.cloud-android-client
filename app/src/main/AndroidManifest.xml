@@ -3,7 +3,11 @@
     package="com.mobius.software.iotbroker.androidclient"
     android:label="IOT Broker Cloud"
     android:versionCode="2"
-    android:versionName="1.1" >
+    android:versionName="1.1">
+
+    <uses-sdk
+        android:minSdkVersion="17"
+        android:targetSdkVersion="26" />
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -12,25 +16,21 @@
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
 
-    <uses-sdk
-        android:minSdkVersion="17"
-        android:targetSdkVersion="26" />
-
     <application
-         android:name="com.mobius.software.android.iotbroker.main.base.IotBrokerApplication"
+        android:name="com.mobius.software.android.iotbroker.main.base.IotBrokerApplication"
         android:allowBackup="true"
         android:icon="@drawable/iotbroker_icon_big"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@style/AppTheme" >
+        android:theme="@style/AppTheme">
         <activity
             android:name="com.mobius.software.android.iotbroker.main.activity.LoadingActivity"
             android:icon="@mipmap/bar_icon"
             android:label="@string/app_name"
             android:launchMode="singleTop"
+            android:screenOrientation="portrait"
             android:theme="@style/iotBrokerTheme"
-            android:windowSoftInputMode="stateHidden" 
-            android:screenOrientation="portrait">
+            android:windowSoftInputMode="stateHidden">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -42,26 +42,32 @@
             android:icon="@mipmap/bar_icon"
             android:label="@string/login_title_log_in"
             android:launchMode="singleTop"
+            android:screenOrientation="portrait"
             android:theme="@style/iotBrokerTheme"
-            android:windowSoftInputMode="stateHidden" 
-            android:screenOrientation="portrait">
-        </activity>
+            android:windowSoftInputMode="stateHidden" />
         <activity
             android:name="com.mobius.software.android.iotbroker.main.activity.TopicsMessagesActivity"
             android:icon="@mipmap/bar_icon"
             android:label="@string/lbl_title_topics"
             android:launchMode="singleTop"
-            android:theme="@style/iotBrokerTheme"
-            android:screenOrientation="portrait" >
-            </activity>
+            android:screenOrientation="portrait"
+            android:theme="@style/iotBrokerTheme" />
+        <activity
+            android:name="com.mobius.software.android.iotbroker.main.activity.AccountsActivity"
+            android:icon="@mipmap/bar_icon"
+            android:label="@string/lbl_title_accounts"
+            android:launchMode="singleTop"
+            android:screenOrientation="portrait"
+            android:theme="@style/iotBrokerTheme" />
 
-        <service android:name="com.mobius.software.android.iotbroker.main.services.NetworkService" ></service>
+        <service android:name="com.mobius.software.android.iotbroker.main.services.NetworkService" />
 
-        <receiver android:name="com.mobius.software.android.iotbroker.main.managers.NetworkBroadcastManager" >
+        <receiver android:name="com.mobius.software.android.iotbroker.main.managers.NetworkBroadcastManager">
             <intent-filter>
                 <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
             </intent-filter>
         </receiver>
+
     </application>
 
 </manifest>

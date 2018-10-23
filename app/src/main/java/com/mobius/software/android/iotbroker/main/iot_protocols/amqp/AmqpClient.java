@@ -395,7 +395,6 @@ public class AmqpClient implements IotProtocol {
 
     private void cleanCurrentSession() {
         dbListener.clearTopicByActiveAccount();
-        dbListener.deleteMessages();
     }
 
     private void writeTopics(String topicName, int qos) {

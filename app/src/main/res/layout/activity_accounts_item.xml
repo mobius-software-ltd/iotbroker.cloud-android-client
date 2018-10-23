@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:descendantFocusability="blocksDescendants"
+    android:layout_height="wrap_content">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <LinearLayout
+            android:id="@+id/titles"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_margin="10dp">
+
+            <TextView
+                android:id="@+id/protocol_title"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_gravity="center_vertical|center_horizontal|end"
+                android:layout_marginStart="8dp"
+                android:layout_weight="3"
+                android:textSize="16sp"
+                android:fontFamily="sans-serif-medium"
+                android:text="@string/lbl_protocol_type" />
+
+            <TextView
+                android:id="@+id/client_id_title"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_gravity="center_vertical|center_horizontal|end"
+                android:layout_marginStart="8dp"
+                android:layout_weight="3"
+                android:textSize="16sp"
+                android:fontFamily="sans-serif-regular"
+                android:text="@string/lbl_client_id" />
+
+            <TextView
+                android:id="@+id/host_title"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_gravity="center_vertical|center_horizontal|end"
+                android:layout_marginStart="8dp"
+                android:layout_weight="3"
+                android:textSize="16sp"
+                android:fontFamily="sans-serif-light"
+                android:text="@string/lbl_server_host" />
+
+
+        </LinearLayout>
+
+        <ImageButton
+            android:id="@+id/button"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:layout_margin="10dp"
+            android:scaleType="centerInside"
+            android:layout_centerVertical="true"
+            android:background="@android:color/transparent"
+            android:src="@mipmap/delete_account_image"
+            android:layout_alignParentEnd="true" />
+    </RelativeLayout>
+
+</LinearLayout>

@@ -108,6 +108,8 @@ public class SendMessageFragment extends Fragment {
 				boolean isDublicate = swtchDublicate.isChecked();
 				int qos = Integer.parseInt(spnrQos.getSelectedItem().toString());
 				SendMessage(content, topic, qos, isRetain, isDublicate);
+
+				cleanSendMessagheForm();
 			}
 		});
 
@@ -196,6 +198,5 @@ public class SendMessageFragment extends Fragment {
 
 	public void update() {
 		MessageDialog.showMessage(getActivity(), getString(R.string.sm_dialog_mewss_was_subsribed), getString(R.string.sm_dialog_succes_text));
-		cleanSendMessagheForm();
 	}
 }

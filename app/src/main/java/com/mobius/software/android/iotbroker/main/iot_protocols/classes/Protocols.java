@@ -57,4 +57,19 @@ public enum Protocols {
     {
         return intToTypeMap.get(type);
     }
+
+    public String toString() {
+        if (this.value == MQTT_PROTOCOL.value) {
+            return "MQTT";
+        } else if (this.value == MQTT_SN_PROTOCOL.value) {
+            return "MQTT-SN";
+        } else if (this.value == COAP_PROTOCOL.value) {
+            return "COAP";
+        } else if (this.value == AMQP_PROTOCOL.value) {
+            return "AMQP";
+        } else if (this.value == WEBSOCKET_PROTOCOL.value) {
+            return "WEBSOCKET";
+        }
+        return "---";
+    }
 }

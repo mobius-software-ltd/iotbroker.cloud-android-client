@@ -30,10 +30,12 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
@@ -43,6 +45,7 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.Spinner;
 import android.widget.Switch;
+import android.widget.Toast;
 
 import com.mobius.software.android.iotbroker.main.adapters.AccountsArrayAdapter;
 import com.mobius.software.android.iotbroker.main.base.ApplicationSettings;
@@ -61,6 +64,8 @@ import com.mobius.software.android.iotbroker.main.managers.NetworkManager;
 import com.mobius.software.android.iotbroker.main.services.NetworkService;
 import com.mobius.software.android.iotbroker.main.utility.MessageDialog;
 import com.mobius.software.iotbroker.androidclient.R;
+
+import java.io.Serializable;
 import java.net.InetSocketAddress;
 import java.util.List;
 import de.greenrobot.dao.query.QueryBuilder;
@@ -120,8 +125,6 @@ public class LoginActivity extends Activity implements AdapterView.OnItemSelecte
 
 		tbx_will = (EditText) findViewById(R.id.tbx_will);
 
-		showAvailableAccountDialog();
-
 		Bundle extras = getIntent().getExtras();
 		if (extras != null) {
 			boolean value = extras.getBoolean("FAILED");
@@ -129,6 +132,32 @@ public class LoginActivity extends Activity implements AdapterView.OnItemSelecte
 				MessageDialog.showMessage(this, getString(R.string.connecting_error_title_dialog), getString(R.string.action_settings));
 			}
 		}
+
+		AccountsDao accountDao = ((AccountsDao) DaoObject.getDao(LoginActivity.this, DaoType.AccountsDao));
+		if (accountDao != null) {
+			List<Accounts> accounts = accountDao.queryBuilder().list();
+			if (accounts.size() > 0) {
+				getActionBar().setHomeButtonEnabled(true);
+				getActionBar().setDisplayHomeAsUpEnabled(true);
+				showAvailableAccountDialog();
+			}
+		}
+
+	}
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		switch (item.getItemId()) {
+			case android.R.id.home:
+				showAvailableAccountDialog();
+				break;
+		}
+		return true;
+	}
+
+	@Override
+	public void onBackPressed() {
+		showAvailableAccountDialog();
 	}
 
 	@Override
@@ -154,7 +183,42 @@ public class LoginActivity extends Activity implements AdapterView.OnItemSelecte
 			accountDialog.dismiss();
 	}
 
-	public boolean getActivityVisible() {
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == AccountsActivity.ACCOUNTS_ACTIVITY_CODE && data != null) {
+			final AccountsDao accountDao = ((AccountsDao) DaoObject.getDao(LoginActivity.this, DaoType.AccountsDao));
+			final List<Accounts> accounts = accountDao.queryBuilder().list();
+            if (resultCode == AccountsActivity.ACCOUNTS_ACTIVITY_SELECT_ITEM_RESULT_CODE) {
+				Integer position = (Integer)data.getSerializableExtra(AccountsActivity.ACCOUNTS_ACTIVITY_ITEM_POSITION_PARAMETER);
+				QueryBuilder<Accounts> queryBuilder = accountDao.queryBuilder();
+				String account = accounts.get(position).getClientID();
+				String serverHost = accounts.get(position).getServerHost();
+
+				queryBuilder.where(AccountsDao.Properties.ClientID.eq(account));
+				queryBuilder.where(AccountsDao.Properties.ServerHost.eq(serverHost));
+
+				List<Accounts> currAccountList = queryBuilder.list();
+				Accounts choiseAccount;
+
+				if (currAccountList != null && currAccountList.size() > 0) {
+					choiseAccount = currAccountList.get(0);
+					login(choiseAccount.getProtocolType(), 	choiseAccount.getServerHost(), 	choiseAccount.getUserName(),
+							choiseAccount.getPassword(), 	choiseAccount.getClientID(), 	choiseAccount.getCleanSession(),
+							choiseAccount.getKeepAlive(), 	choiseAccount.getWillTopic(), 	choiseAccount.getWill(),
+							choiseAccount.getIsRetain(), 	choiseAccount.getQos(), 		true,
+							choiseAccount.getPort(), 		choiseAccount.getIsSecureConnection(), choiseAccount.getCertificatePath(),
+							choiseAccount.getCertificatePassword());
+				}
+
+            } else if (resultCode == AccountsActivity.ACCOUNTS_ACTIVITY_DELETE_ITEM_RESULT_CODE) {
+				Integer position = (Integer)data.getSerializableExtra(AccountsActivity.ACCOUNTS_ACTIVITY_ITEM_POSITION_PARAMETER);
+				accountDao.delete(accounts.get(position));
+            }
+        }
+    }
+
+    public boolean getActivityVisible() {
 		return activityVisible;
 	}
 
@@ -171,6 +235,11 @@ public class LoginActivity extends Activity implements AdapterView.OnItemSelecte
 			return;
 		}
 
+		Intent intent = new Intent(this, AccountsActivity.class);
+		intent.putExtra(ApplicationSettings.PARAM_ACCOUNTS, (Serializable) defaultAccountsList);
+		startActivityForResult(intent, AccountsActivity.ACCOUNTS_ACTIVITY_CODE);
+
+		/*
 		View linearlayout = getLayoutInflater().inflate(R.layout.accounts_list, null);
 		accountsDialogBuilder.setView(linearlayout);
 
@@ -206,8 +275,10 @@ public class LoginActivity extends Activity implements AdapterView.OnItemSelecte
 				accountDialog.cancel();
 			}
 		});
+
 		accountDialog = accountsDialogBuilder.create();
 		accountDialog.show();
+		*/
 	}
 
 	public void showAddWillDialog() {
@@ -330,10 +401,14 @@ public class LoginActivity extends Activity implements AdapterView.OnItemSelecte
 			keepAlive = 0;
 
 			if (!isEmpty(keepAliveString)) {
-				keepAlive = Integer.parseInt(keepAliveString);
+				try {
+					keepAlive = Integer.parseInt(keepAliveString);
+				} catch (Exception ex) {
+					MessageDialog.showMessage(this, errorTitle, getString(R.string.keep_alive_must_more_zero));
+				}
 			}
 
-			if (keepAlive < 1 || keepAlive > 65535) {
+			if (keepAlive < 0 || keepAlive > 65535) {
 				MessageDialog.showMessage(this, errorTitle, getString(R.string.keep_alive_must_more_zero));
 				return;
 			}
@@ -406,12 +481,6 @@ public class LoginActivity extends Activity implements AdapterView.OnItemSelecte
 
 		ConnectThread connectThread = new ConnectThread(this, protocol, serverHost, username, password, clientID, isCleanSession, keepAlive, will, updateAccount, port, isSecure, crtPath, crtPassword);
 		connectThread.execute(protocol, serverHost, username, password, clientID, isCleanSession, keepAlive, willTopic, willMessage, isRetain, qosNumb, updateAccount, port);
-	}
-
-	@Override
-	public void onBackPressed() {
-		setResult(RESULT_CANCELED);
-		finish();
 	}
 
 	public void showAddWill(View view) {

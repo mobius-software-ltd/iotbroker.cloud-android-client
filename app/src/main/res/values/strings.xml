@@ -13,7 +13,7 @@
     <string name="lbl_clean_session">Clean Session</string>
     <string name="lbl_keepalive">Keepalive</string>
     <string name="lbl_will">Will</string>
-     <string name="lbl_will_topic">Will Topic</string>
+    <string name="lbl_will_topic">Will Topic</string>
     <string name="lbl_retain">Retain</string>
     <string name="lbl_qos">Qos</string>
     <string name="lbl_security_block">Client security</string>
@@ -60,6 +60,7 @@
 
     <string name="lbl_delete_topics">Delete this topics</string>
     <string name="lbl_title_topics">Topics List</string>
+    <string name="lbl_title_accounts">Accounts List</string>
     <string name="topics_image_description"></string>
     <string name="topics_btn_cancel">Cancel</string>
     <string name="btn_add_topic">Tap here to add new topic</string>

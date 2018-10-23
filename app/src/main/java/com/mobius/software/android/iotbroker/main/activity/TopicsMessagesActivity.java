@@ -22,14 +22,19 @@ package com.mobius.software.android.iotbroker.main.activity;
 
 import java.util.List;
 
+import android.app.AlertDialog;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
@@ -83,7 +88,30 @@ public class TopicsMessagesActivity extends SherlockActivity {
 			@Override
 			public void onReceive(Context context, Intent intent) {
 
-				if (intent.getAction().equals(ApplicationSettings.ACTION_MESSAGE_RECEIVED)) {
+				if (intent.getAction().equalsIgnoreCase(ApplicationSettings.ALERT_MESSAGE)) {
+					final String content = intent.getStringExtra(ApplicationSettings.PARAM_CONTENT);
+
+					new Handler(Looper.getMainLooper()).post(new Runnable() {
+						@Override
+						public void run() {
+							AlertDialog.Builder builder;
+							if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+								builder = new AlertDialog.Builder(TopicsMessagesActivity.this, android.R.style.Theme_Material_Light_Dialog);
+							} else {
+								builder = new AlertDialog.Builder(TopicsMessagesActivity.this);
+							}
+							builder.setTitle("Attention")
+									.setMessage(content)
+									.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+										public void onClick(DialogInterface dialog, int which) {
+										}
+									})
+									.setIcon(android.R.drawable.ic_dialog_alert)
+									.show();
+						}
+					});
+
+				} else if (intent.getAction().equals(ApplicationSettings.ACTION_MESSAGE_RECEIVED)) {
 					Integer messageType = Integer.parseInt(intent.getStringExtra(ApplicationSettings.PARAM_MESSAGETYPE));
 					messageReceived(messageType);
 				}
@@ -94,12 +122,13 @@ public class TopicsMessagesActivity extends SherlockActivity {
 				else if (intent.getAction().equalsIgnoreCase(ApplicationSettings.NETWORK_CHANGED)) {
 					networkDown();
 				}
+
 			}
 
 		};
 
 		intFilter = new IntentFilter(ApplicationSettings.ACTION_MESSAGE_RECEIVED);
-
+		intFilter.addAction(ApplicationSettings.ALERT_MESSAGE);
 		intFilter.addAction(ApplicationSettings.NETWORK_DOWN);
 		intFilter.addAction(ApplicationSettings.NETWORK_CHANGED);
 		registerReceiver(messagesReceiver, intFilter);
