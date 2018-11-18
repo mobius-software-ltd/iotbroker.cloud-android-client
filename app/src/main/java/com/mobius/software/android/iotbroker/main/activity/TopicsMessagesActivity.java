@@ -22,6 +22,7 @@ package com.mobius.software.android.iotbroker.main.activity;
 
 import java.util.List;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Fragment;
 import android.app.FragmentManager;
@@ -35,15 +36,12 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
 
-import com.actionbarsherlock.app.ActionBar;
-import com.actionbarsherlock.app.SherlockActivity;
-import com.actionbarsherlock.view.Menu;
-import com.actionbarsherlock.view.MenuInflater;
-import com.actionbarsherlock.view.MenuItem;
 import com.mobius.software.android.iotbroker.main.base.ApplicationSettings;
 import com.mobius.software.android.iotbroker.main.base.DaoObject;
 import com.mobius.software.android.iotbroker.main.dal.Accounts;
@@ -52,18 +50,16 @@ import com.mobius.software.android.iotbroker.main.dal.DaoType;
 import com.mobius.software.android.iotbroker.main.fragments.MessagesListFragment;
 import com.mobius.software.android.iotbroker.main.fragments.SendMessageFragment;
 import com.mobius.software.android.iotbroker.main.fragments.TopicsListFragment;
-import com.mobius.software.android.iotbroker.main.iot_protocols.classes.Message;
 import com.mobius.software.android.iotbroker.main.iot_protocols.mqtt.parser.avps.MessageType;
 import com.mobius.software.android.iotbroker.main.services.NetworkService;
 import com.mobius.software.iotbroker.androidclient.R;
 
-public class TopicsMessagesActivity extends SherlockActivity {
+public class TopicsMessagesActivity extends Activity {
 
 	private Fragment tlFragment, smFragment, mlFragment;
 	FragmentManager fragmentManager;
 
 	private final String[] TAB_TAGS = new String[] { "tl", "sm", "ml" };
-	private ActionBar actionBar;
 
 	private BroadcastReceiver messagesReceiver;
 	IntentFilter intFilter;
@@ -72,10 +68,6 @@ public class TopicsMessagesActivity extends SherlockActivity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_topics_messages);
-
-		actionBar = getSupportActionBar();
-		actionBar.setDisplayShowHomeEnabled(true);
-		actionBar.setDisplayShowTitleEnabled(true);
 
 		fragmentManager = getFragmentManager();
 		tlFragment = new TopicsListFragment();
@@ -160,7 +152,7 @@ public class TopicsMessagesActivity extends SherlockActivity {
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
-		MenuInflater inflater = getSupportMenuInflater();
+		MenuInflater inflater = getMenuInflater();
 		inflater.inflate(R.menu.topics_list, menu);
 		return true;
 	}
@@ -239,7 +231,7 @@ public class TopicsMessagesActivity extends SherlockActivity {
 	}
 
 	public void tab_tl_click(View view) {
-		actionBar.setTitle(R.string.tsm_title_topics_list);
+		setTitle(R.string.tsm_title_topics_list);
 		FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
 		fragmentTransaction.replace(R.id.fragment_container, tlFragment, TAB_TAGS[0]);
 		fragmentTransaction.commit();
@@ -248,7 +240,7 @@ public class TopicsMessagesActivity extends SherlockActivity {
 	}
 
 	public void tab_sm_click(View view) {
-		actionBar.setTitle(R.string.tsm_title_send_message);
+		setTitle(R.string.tsm_title_send_message);
 		FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
 		fragmentTransaction.replace(R.id.fragment_container, smFragment, TAB_TAGS[1]);
 		fragmentTransaction.commit();
@@ -257,7 +249,7 @@ public class TopicsMessagesActivity extends SherlockActivity {
 	}
 
 	public void tab_ml_click(View view) {
-		actionBar.setTitle(R.string.tsm_title_messages_list);
+		setTitle(R.string.tsm_title_messages_list);
 		FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
 		fragmentTransaction.replace(R.id.fragment_container, mlFragment, TAB_TAGS[2]);
 		fragmentTransaction.commit();
