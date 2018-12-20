@@ -42,7 +42,7 @@ the path to the cloned project in the root directory.
 * Note that Android Studio program guides you, which programs should be installed for development and 
 will suggest to install them. If you have any recommendation to install programs, you should do it. 
 
-* Then press the "Run" button, where you have to click "Run app" and choose "Virtual Device" option.  
+* Then press the **"Run"** button, where you have to click **"Run app" and choose "Virtual Device" option.  
 You also can create virtual device, to create it click "Create Virtual Device"; 
 
 * Be patient! It may take a few MINUTES to download the emulator (virtual device, which was chosen); 
