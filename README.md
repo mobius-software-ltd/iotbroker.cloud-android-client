@@ -53,6 +53,6 @@ You also can create virtual device, to create it click "Create Virtual Device";
 
 Please note that at this stage it is not possible to register as a client. You can only log in to your existing account. 
 
-IoTBroker.Cloud C Client is developed by [Mobius Software](http://mobius-software.com/).
+IoTBroker.Cloud C Client is developed by [Mobius Software](https://www.mobius-software.com/).
 
 ## [License](LICENSE.md)
