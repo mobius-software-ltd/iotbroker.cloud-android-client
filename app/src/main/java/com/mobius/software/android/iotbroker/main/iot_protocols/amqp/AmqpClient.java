@@ -67,6 +67,7 @@ import com.mobius.software.android.iotbroker.main.managers.ConnectionState;
 import com.mobius.software.android.iotbroker.main.managers.ConnectionTimerTask;
 import com.mobius.software.android.iotbroker.main.managers.MessageResendTimerTask;
 import com.mobius.software.android.iotbroker.main.net.TCPClient;
+import com.mobius.software.android.iotbroker.main.net.TLSHelper;
 import com.mobius.software.android.iotbroker.main.services.NetworkService;
 import com.mobius.software.android.iotbroker.main.utility.FileManager;
 
@@ -153,7 +154,7 @@ public class AmqpClient implements IotProtocol {
     }
 
     public AmqpClient(InetSocketAddress address, String username, String password, String clientID, boolean isClean,
-                      int keepalive, Will will, String crtPath, String crtPass, Context context) {
+                      int keepalive, Will will, String crt, String crtPass, Context context) {
 
         this.address = address;
         this.username = username;
@@ -167,8 +168,14 @@ public class AmqpClient implements IotProtocol {
         this.chanel = 0;
         this.client = new TCPClient(address, workerThreads);
         this.client.setSecure(true);
-        this.client.setKeyStore(FileManager.loadKeyStore(crtPath, crtPass));
-        this.client.setKeyStorePassword(crtPass);
+
+        try {
+            this.client.setKeyStore(TLSHelper.getKeyStore(crt, crtPass));
+            this.client.setKeyStorePassword(crtPass);
+        }
+        catch(Exception ex) {
+
+        }
     }
 
     public void setListener(ClientStateListener listener) {

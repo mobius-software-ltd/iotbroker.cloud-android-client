@@ -35,6 +35,7 @@ import com.mobius.software.android.iotbroker.main.managers.MessageResendTimerTas
 import com.mobius.software.android.iotbroker.main.net.DtlsClient;
 import com.mobius.software.android.iotbroker.main.net.InternetProtocol;
 import com.mobius.software.android.iotbroker.main.net.TCPClient;
+import com.mobius.software.android.iotbroker.main.net.TLSHelper;
 import com.mobius.software.android.iotbroker.main.net.UDPClient;
 import com.mobius.software.android.iotbroker.main.services.NetworkService;
 import com.mobius.software.android.iotbroker.main.utility.ConvertorUtil;
@@ -98,7 +99,7 @@ public class CoapClient implements IotProtocol {
     }
 
     public CoapClient(InetSocketAddress address, String clientID, boolean isClean,
-                      int keepalive, String crtPath, String crtPass, Context context) {
+                      int keepalive, String crt, String crtPass, Context context) {
         this.isSecure = true;
         this.address = address;
         this.clientID = clientID;
@@ -107,8 +108,15 @@ public class CoapClient implements IotProtocol {
         this.context = context;
         this.client = new DtlsClient(address, workerThreads);
         ((DtlsClient)this.client).setSecure(this.isSecure);
-        ((DtlsClient)this.client).setKeyStore(FileManager.loadKeyStore(crtPath, crtPass));
-        ((DtlsClient)this.client).setKeyStorePassword(crtPass);
+
+        try {
+            ((DtlsClient) this.client).setKeyStore(TLSHelper.getKeyStore(crt, crtPass));
+            ((DtlsClient) this.client).setKeyStorePassword(crtPass);
+        }
+        catch(Exception ex) {
+
+        }
+
         this.topics = new HashMap<>();
     }
 

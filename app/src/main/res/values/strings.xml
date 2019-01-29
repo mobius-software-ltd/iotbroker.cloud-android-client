@@ -138,11 +138,13 @@
     <string name="content_input_dialog_btn_ok">Add</string>
     <string name="content_input_dialog_btn_cancel">Cancel</string>
     <string name="will_input_dialog_title">Please input  the will text</string>
+    <string name="cert_input_dialog_title">Please paste pem certificate here</string>
     <string name="will_input_dialog_btn_ok">Add</string>
     <string name="will_input_dialog_btn_cancel">Cancel</string>
     <string name="no_network_access">No network access</string>
     <string name="no_network_error">Network error</string>
     <string name="no_network_error_message">An error occurred while attempting to contact the server. Please check your internet connection</string>
     <string name="will_topic_can_not_be_null">Will Topic can not be null</string>
+    <string name="invalid_certificate">Invalid pem content has been set, please check pem again</string>
     <string name="port">Port</string>
 </resources>

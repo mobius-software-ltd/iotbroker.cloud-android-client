@@ -61,6 +61,7 @@ import com.mobius.software.android.iotbroker.main.iot_protocols.mqtt.parser.avps
 import com.mobius.software.android.iotbroker.main.iot_protocols.mqtt.parser.avps.Text;
 import com.mobius.software.android.iotbroker.main.iot_protocols.mqtt.parser.avps.Will;
 import com.mobius.software.android.iotbroker.main.managers.NetworkManager;
+import com.mobius.software.android.iotbroker.main.net.TLSHelper;
 import com.mobius.software.android.iotbroker.main.services.NetworkService;
 import com.mobius.software.android.iotbroker.main.utility.MessageDialog;
 import com.mobius.software.iotbroker.androidclient.R;
@@ -82,6 +83,10 @@ public class LoginActivity extends Activity implements AdapterView.OnItemSelecte
 	AlertDialog accountDialog;
 
 	private Switch isSecure;
+
+	private EditText tbx_cert;
+	private String currentCert;
+
 	private EditText editSecureKey;
 	private LinearLayout secureKeyCell;
 
@@ -124,7 +129,7 @@ public class LoginActivity extends Activity implements AdapterView.OnItemSelecte
 		registerReceiver(startServiceReceiver, intFilter);
 
 		tbx_will = (EditText) findViewById(R.id.tbx_will);
-
+		tbx_cert = (EditText) findViewById(R.id.edit_secure_key);
 		Bundle extras = getIntent().getExtras();
 		if (extras != null) {
 			boolean value = extras.getBoolean("FAILED");
@@ -308,6 +313,33 @@ public class LoginActivity extends Activity implements AdapterView.OnItemSelecte
 		inputWillDialog.show();
 	}
 
+	public void showAddCertDialog() {
+
+		final AlertDialog.Builder inputWillDialog = new AlertDialog.Builder(this);
+		inputWillDialog.setTitle(R.string.cert_input_dialog_title);
+
+		View linearlayout = getLayoutInflater().inflate(R.layout.input_will_dialog, null);
+		inputWillDialog.setView(linearlayout);
+
+		final EditText txtCert = (EditText) linearlayout.findViewById(R.id.tbx_will);
+		txtCert.setText(currentCert);
+
+		inputWillDialog.setPositiveButton(R.string.will_input_dialog_btn_ok, new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int which) {
+				currentCert = txtCert.getText().toString();
+				tbx_cert.setText(currentCert);
+				dialog.dismiss();
+			}
+		}).setNegativeButton(R.string.will_input_dialog_btn_cancel, new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int id) {
+				dialog.cancel();
+			}
+		});
+
+		inputWillDialog.create();
+		inputWillDialog.show();
+	}
+
 	public void btn_login_click(View view) {
 
 		Spinner spnrProtocolType = (Spinner) findViewById(R.id.tbx_protocol_type);
@@ -456,6 +488,15 @@ public class LoginActivity extends Activity implements AdapterView.OnItemSelecte
 			}
 		}
 
+		if(certificatePath!=null && certificatePath.length()>0) {
+			try {
+				TLSHelper.getKeyStore(certificatePath, certificatePassword);
+			} catch (Exception ex) {
+				MessageDialog.showMessage(this, errorTitle, getString(R.string.invalid_certificate));
+				return;
+			}
+		}
+
 		login(protocolTypeIndex, serverHost, username, password, clientID, isCleanSession, keepAlive, willTopic, willMessage, isRetain, qos, true, currentPort, isSecure, certificatePath, certificatePassword);
 	}
 
@@ -485,6 +526,10 @@ public class LoginActivity extends Activity implements AdapterView.OnItemSelecte
 
 	public void showAddWill(View view) {
 		showAddWillDialog();
+	}
+
+	public void showAddCert(View view) {
+		showAddCertDialog();
 	}
 
 	public static boolean isEmpty(CharSequence str) {
@@ -626,48 +671,6 @@ public class LoginActivity extends Activity implements AdapterView.OnItemSelecte
 
 	@Override
 	public void onClick(View v) {
-		if (v.equals(this.secureKeyCell)) {
-			String permission = android.Manifest.permission.READ_EXTERNAL_STORAGE;
-			int res = checkCallingOrSelfPermission(permission);
-			if (res == PackageManager.PERMISSION_GRANTED) {
-				this.showOpenFileDialog();
-			} else {
-				ActivityCompat.requestPermissions(this, new String[]{ Manifest.permission.READ_EXTERNAL_STORAGE }, 1);
-			}
-		}
-	}
-
-	@Override
-	public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-		super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-		if(grantResults[0]== PackageManager.PERMISSION_GRANTED){
-			if (permissions[0].equals(Manifest.permission.READ_EXTERNAL_STORAGE)) {
-				if (grantResults[0] == 0) {
-					this.showOpenFileDialog();
-				}
-			}
-		}
-	}
-
-	private void showOpenFileDialog() {
-		final OpenFileDialog openFileDialog = new OpenFileDialog(this);
-		openFileDialog.setOnCloseListener(new OpenFileDialog.OnCloseListener() {
-			@Override
-			public void onCancel() {
-			}
-			@Override
-			public void onOk(String selectedFile) {
-				try {
-					editSecureKey.setText(selectedFile);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-		});
-
-		openFileDialog.test();
-		openFileDialog.setFolderSelectable(true);
-		openFileDialog.show();
 	}
 
 	@Override

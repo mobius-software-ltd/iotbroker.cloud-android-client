@@ -844,7 +844,8 @@
                         android:clickable="false"
                         android:cursorVisible="false"
                         android:focusable="false"
-                        android:focusableInTouchMode="false" />
+                        android:focusableInTouchMode="false"
+                        android:onClick="showAddCert" />
 
                 </LinearLayout>
 

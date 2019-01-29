@@ -62,6 +62,7 @@ import com.mobius.software.android.iotbroker.main.iot_protocols.mqtt.parser.head
 import com.mobius.software.android.iotbroker.main.iot_protocols.mqtt.parser.header.impl.Pubrel;
 import com.mobius.software.android.iotbroker.main.iot_protocols.mqtt.parser.header.impl.Subscribe;
 import com.mobius.software.android.iotbroker.main.iot_protocols.mqtt.parser.header.impl.Unsubscribe;
+import com.mobius.software.android.iotbroker.main.net.TLSHelper;
 import com.mobius.software.android.iotbroker.main.services.NetworkService;
 import com.mobius.software.android.iotbroker.main.utility.FileManager;
 
@@ -101,7 +102,7 @@ public class MqttClient implements IotProtocol {
 	}
 
 	public MqttClient(InetSocketAddress address, String username, String password, String clientID, boolean isClean,
-					  int keepalive, Will will, String crtPath, String crtPass, Context context) {
+					  int keepalive, Will will, String crt, String crtPass, Context context) {
 		this.address = address;
 		this.username = username;
 		this.password = password;
@@ -112,8 +113,13 @@ public class MqttClient implements IotProtocol {
 		this.context = context;
 		client = new TCPClient(address, workerThreads);
 		client.setSecure(true);
-		client.setKeyStore(FileManager.loadKeyStore(crtPath, crtPass));
-		client.setKeyStorePassword(crtPass);
+		try {
+			this.client.setKeyStore(TLSHelper.getKeyStore(crt, crtPass));
+			this.client.setKeyStorePassword(crtPass);
+		}
+		catch(Exception ex) {
+
+		}
 	}
 
 	public void setListener(ClientStateListener listener) {

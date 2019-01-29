@@ -3,10 +3,7 @@ package com.mobius.software.android.iotbroker.main.net;
 import android.util.Log;
 
 import com.mobius.software.android.iotbroker.main.iot_protocols.classes.AbstractParser;
-import com.mobius.software.android.iotbroker.main.iot_protocols.classes.Encoder;
-import com.mobius.software.android.iotbroker.main.iot_protocols.classes.Handler;
 import com.mobius.software.android.iotbroker.main.iot_protocols.classes.Message;
-import com.mobius.software.android.iotbroker.main.iot_protocols.classes.UDPDecoder;
 import com.mobius.software.android.iotbroker.main.listeners.ConnectionListener;
 
 import com.mobius.software.iot.dal.crypto.AsyncDtlsClient;
