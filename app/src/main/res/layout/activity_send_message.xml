@@ -49,6 +49,7 @@
                 android:focusable="false"
                 android:inputType="none"
                 android:minWidth="192.67dp"
+                android:maxLines="5"
                 android:onClick="showAddContent" >
             </EditText>
         </LinearLayout>
