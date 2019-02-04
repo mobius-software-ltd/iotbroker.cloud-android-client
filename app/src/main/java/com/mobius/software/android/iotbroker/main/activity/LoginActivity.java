@@ -492,6 +492,7 @@ public class LoginActivity extends Activity implements AdapterView.OnItemSelecte
 			try {
 				TLSHelper.getKeyStore(certificatePath, certificatePassword);
 			} catch (Exception ex) {
+				Log.e("LoginActivity","An error while parsing pem certificate",ex);
 				MessageDialog.showMessage(this, errorTitle, getString(R.string.invalid_certificate));
 				return;
 			}

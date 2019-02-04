@@ -49,7 +49,7 @@ public class TLSHelper
         }
 
         reader.close();
-        KeyStore ks = KeyStore.getInstance("JKS");
+        KeyStore ks = KeyStore.getInstance("BKS");
         ks.load(null, null);
 
         X509Certificate[] chain=new X509Certificate[certificates.size()];
