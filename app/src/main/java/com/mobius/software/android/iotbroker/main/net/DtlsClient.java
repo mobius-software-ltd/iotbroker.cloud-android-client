@@ -3,7 +3,10 @@ package com.mobius.software.android.iotbroker.main.net;
 import android.util.Log;
 
 import com.mobius.software.android.iotbroker.main.iot_protocols.classes.AbstractParser;
+import com.mobius.software.android.iotbroker.main.iot_protocols.classes.Encoder;
+import com.mobius.software.android.iotbroker.main.iot_protocols.classes.Handler;
 import com.mobius.software.android.iotbroker.main.iot_protocols.classes.Message;
+import com.mobius.software.android.iotbroker.main.iot_protocols.classes.UDPDecoder;
 import com.mobius.software.android.iotbroker.main.listeners.ConnectionListener;
 
 import com.mobius.software.iot.dal.crypto.AsyncDtlsClient;
@@ -69,14 +72,14 @@ public class DtlsClient implements InternetProtocol, DtlsStateHandler {
             bootstrap.handler(new ChannelInitializer<DatagramChannel>() {
                 @Override
                 protected void initChannel(DatagramChannel datagramChannel) throws Exception {
-                    AsyncDtlsClient asyncDtlsClient = new AsyncDtlsClient(keyStore, keyStorePassword);
+                    AsyncDtlsClient asyncDtlsClient = new AsyncDtlsClient(keyStore, keyStorePassword, null);
                     protocol = new AsyncDtlsClientProtocol(asyncDtlsClient, SECURE_RANDOM, datagramChannel, null, client, address, true, ProtocolVersion.DTLSv12);
                     datagramChannel.pipeline().addLast(new AsyncDtlsClientHandler(protocol, client));
 
-                    //datagramChannel.pipeline().addLast(new UDPDecoder(parser));
-                    //datagramChannel.pipeline().addLast("handler", new Handler(listener));
-                    //datagramChannel.pipeline().addLast(new Encoder(parser));
-                    //datagramChannel.pipeline().addLast(new ExceptionHandler(listener));
+                    datagramChannel.pipeline().addLast(new UDPDecoder(parser));
+                    datagramChannel.pipeline().addLast("handler", new Handler(listener));
+                    datagramChannel.pipeline().addLast(new Encoder(parser));
+                    datagramChannel.pipeline().addLast(new ExceptionHandler(listener));
 
                     //datagramChannel.pipeline().addLast(new DummyMessageHandler(client));
                 }

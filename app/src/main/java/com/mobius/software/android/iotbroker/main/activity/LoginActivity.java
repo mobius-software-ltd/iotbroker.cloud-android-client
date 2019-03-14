@@ -449,6 +449,10 @@ public class LoginActivity extends Activity implements AdapterView.OnItemSelecte
 		if (findViewById(R.id.will_cell).getVisibility() == View.VISIBLE) {
 			tbx_will = (EditText) findViewById(R.id.tbx_will);
 			willMessage = tbx_will.getText().toString();
+			if((protocolTypeIndex==1 || protocolTypeIndex==2) && willMessage.length()>1400) {
+				MessageDialog.showMessage(this, errorTitle, getString(R.string.will_too_long));
+				return;
+			}
 		}
 
 		if (findViewById(R.id.will_topic_cell).getVisibility() == View.VISIBLE) {

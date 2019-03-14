@@ -119,6 +119,9 @@ public class MqttSnClient implements IotProtocol {
 
     public MqttSnClient(InetSocketAddress address, String clientID, boolean isClean,
                       int keepalive, Will will, String crt, String crtPass, Context context) {
+        this.publishPackets = new HashMap<>();
+        this.topics = new HashMap<>();
+
         this.isSecure = true;
         this.address = address;
         this.clientID = clientID;
@@ -383,14 +386,14 @@ public class MqttSnClient implements IotProtocol {
             }
             case WILL_MSG_REQ:
             {
-                throw new CoreLogicException("received invalid message will msg req");
-            }
-            case WILL_MSG:
-            {
                 ByteBuf wrappedBuffer = Unpooled.wrappedBuffer(will.getContent());
                 WillMsg willMsg = new WillMsg(wrappedBuffer);
                 client.send(willMsg);
             } break;
+            case WILL_MSG:
+            {
+                throw new CoreLogicException("received invalid message will msg req");
+            }
             case REGISTER:
             {
                 Register register = (Register)message;

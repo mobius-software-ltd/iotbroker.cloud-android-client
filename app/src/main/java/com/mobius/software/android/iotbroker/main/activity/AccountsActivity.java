@@ -56,7 +56,10 @@ public class AccountsActivity extends Activity implements ButtonListener, Adapte
 
     @Override
     public void buttonPressed(int position) {
+        AccountsDao accountDao = ((AccountsDao) DaoObject.getDao(this, DaoType.AccountsDao));
+        Accounts currAccount=this.adapter.getItem(position);
         this.adapter.removeItem(position);
+        accountDao.delete(currAccount);
         Intent intent = new Intent();
         intent.putExtra(ACCOUNTS_ACTIVITY_ITEM_POSITION_PARAMETER, position);
         setResult(ACCOUNTS_ACTIVITY_DELETE_ITEM_RESULT_CODE, intent);

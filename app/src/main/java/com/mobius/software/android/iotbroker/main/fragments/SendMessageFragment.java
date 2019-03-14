@@ -138,6 +138,12 @@ public class SendMessageFragment extends Fragment {
 			account = accountsList.get(0);
 		}
 
+		if (content.length() > 1400 && (account.getProtocolType()==1 || account.getProtocolType()==2)) {
+			String errorTitle = getActivity().getString(R.string.sm_error_dialog_title);
+			MessageDialog.showMessage(getActivity(), errorTitle, getString(R.string.content_too_long));
+			return;
+		}
+
 		if (account != null) {
 			MessagesDao messageDao = ((MessagesDao) DaoObject.getDao(getActivity(), DaoType.MessagesDao));
 			Messages message = new Messages(null, content, qos, false, topic, account.getId());

@@ -146,5 +146,7 @@
     <string name="no_network_error_message">An error occurred while attempting to contact the server. Please check your internet connection</string>
     <string name="will_topic_can_not_be_null">Will Topic can not be null</string>
     <string name="invalid_certificate">Invalid pem content has been set, please check pem again</string>
+    <string name="will_too_long">Maximum will message length for this protocol is 1400 symbols</string>
+    <string name="content_too_long">Maximum content length for this protocol is 1400 symbols</string>
     <string name="port">Port</string>
 </resources>
