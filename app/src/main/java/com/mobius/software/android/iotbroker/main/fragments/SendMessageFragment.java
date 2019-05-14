@@ -31,6 +31,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
@@ -62,7 +63,9 @@ public class SendMessageFragment extends Fragment {
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 
-		return inflater.inflate(R.layout.activity_send_message, container, false);
+		View v=inflater.inflate(R.layout.activity_send_message, container, false);
+
+		return v;
 	}
 
 	private void cleanSendMessagheForm() {
@@ -119,6 +122,47 @@ public class SendMessageFragment extends Fragment {
 				showAddContnentDialog();
 			}
 		});
+
+        String [] qosArr;
+		Accounts currAccount=currAccount();
+		if(currAccount!=null) {
+			if(currAccount.getProtocolType()==2) {
+				view.findViewById(R.id.vw_duplicate).setVisibility(View.INVISIBLE);
+				view.findViewById(R.id.pnl_duplicate).setVisibility(View.INVISIBLE);
+				view.findViewById(R.id.vw_retain).setVisibility(View.INVISIBLE);
+				view.findViewById(R.id.pnl_retain).setVisibility(View.INVISIBLE);
+                qosArr =new String[] {"0","1"};
+			}
+			else {
+                qosArr =new String[] {"0","1","2"};
+				view.findViewById(R.id.vw_duplicate).setVisibility(View.VISIBLE);
+				view.findViewById(R.id.pnl_duplicate).setVisibility(View.VISIBLE);
+				view.findViewById(R.id.vw_retain).setVisibility(View.VISIBLE);
+				view.findViewById(R.id.pnl_retain).setVisibility(View.VISIBLE);
+			}
+		}
+		else {
+            qosArr =new String[] {"0","1","2"};
+			view.findViewById(R.id.vw_duplicate).setVisibility(View.VISIBLE);
+			view.findViewById(R.id.pnl_duplicate).setVisibility(View.VISIBLE);
+			view.findViewById(R.id.vw_retain).setVisibility(View.VISIBLE);
+			view.findViewById(R.id.pnl_retain).setVisibility(View.VISIBLE);
+		}
+
+        ArrayAdapter<String>adapter = new ArrayAdapter<>(view.getContext(),android.R.layout.simple_spinner_item,qosArr);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spnrQos.setAdapter(adapter);
+	}
+
+	private Accounts currAccount() {
+		AccountsDao accountDao = ((AccountsDao) DaoObject.getDao(getActivity(), DaoType.AccountsDao));
+		List<Accounts> accountsList = accountDao.queryBuilder().where(Properties.IsDefault.eq(1)).list();
+
+		if (accountsList != null && accountsList.size() > 0) {
+			return accountsList.get(0);
+		}
+
+		return null;
 	}
 
 	private void SendMessage(String content, String topic, int qos, boolean isRetain,

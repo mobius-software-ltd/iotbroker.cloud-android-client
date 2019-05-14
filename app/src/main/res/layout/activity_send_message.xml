@@ -147,11 +147,13 @@
             android:background="#d9e1e3" />
 
         <View
+            android:id="@+id/vw_retain"
             android:layout_width="match_parent"
             android:layout_height="1dp"
             android:background="#d9e1e3" />
 
         <LinearLayout
+            android:id="@+id/pnl_retain"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="10dp"
@@ -190,11 +192,13 @@
         </LinearLayout>
 
         <View
+            android:id="@+id/vw_duplicate"
             android:layout_width="match_parent"
             android:layout_height="1dp"
             android:background="#d9e1e3" />
 
         <LinearLayout
+            android:id="@+id/pnl_duplicate"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="10dp"

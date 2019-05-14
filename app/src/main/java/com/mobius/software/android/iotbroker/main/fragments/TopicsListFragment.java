@@ -31,6 +31,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ListView;
@@ -94,6 +95,23 @@ public class TopicsListFragment extends Fragment {
 		final EditText tbxTopics = (EditText) linearlayout.findViewById(R.id.tbx_topics_name);
 
 		final Spinner spnrQos = (Spinner) linearlayout.findViewById(R.id.spnr_qos);
+		String [] qosArr;
+		Accounts currAccount=currAccount();
+		if(currAccount!=null) {
+			if(currAccount.getProtocolType()==2) {
+				qosArr =new String[] {"0","1"};
+			}
+			else {
+				qosArr =new String[] {"0","1","2"};
+			}
+		}
+		else {
+			qosArr =new String[] {"0","1","2"};
+		}
+
+		ArrayAdapter<String> adapter = new ArrayAdapter<>(linearlayout.getContext(),android.R.layout.simple_spinner_item,qosArr);
+		adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+		spnrQos.setAdapter(adapter);
 
 		ratingdialog.setPositiveButton(R.string.topics_btn_OK, new DialogInterface.OnClickListener() {
 			public void onClick(DialogInterface dialog, int which) {
@@ -143,6 +161,17 @@ public class TopicsListFragment extends Fragment {
 
 		ratingdialog.create();
 		ratingdialog.show();
+	}
+
+	private Accounts currAccount() {
+		AccountsDao accountDao = ((AccountsDao) DaoObject.getDao(getActivity(), DaoType.AccountsDao));
+		List<Accounts> accountsList = accountDao.queryBuilder().where(AccountsDao.Properties.IsDefault.eq(1)).list();
+
+		if (accountsList != null && accountsList.size() > 0) {
+			return accountsList.get(0);
+		}
+
+		return null;
 	}
 
 	private void refresh() {

@@ -86,6 +86,7 @@ public class CoapClient implements IotProtocol {
     private DataBaseListener dbListener;
     private static ConnectionState currentState;
     private HashMap<Integer, String> topics;
+    private int connectCount=0;
 
     public CoapClient(InetSocketAddress address, String clientID, boolean isClean,
                       int keepalive, Context context) {
@@ -179,11 +180,12 @@ public class CoapClient implements IotProtocol {
     }
 
     public void connect() {
-        setState(ConnectionState.CONNECTION_ESTABLISHED);
+        setState(ConnectionState.CONNECTING);
 
         if (timers != null)
             timers.stopAllTimers();
 
+        send(getPingreqMessage());
         timers = new TimersMap(this, client);
         timers.startPingTimer(keepalive);
     }
@@ -245,7 +247,7 @@ public class CoapClient implements IotProtocol {
     }
 
     public void reinit() {
-
+        connectCount=0;
         setState(ConnectionState.CHANNEL_CREATING);
 
         if (client != null)
@@ -355,6 +357,8 @@ public class CoapClient implements IotProtocol {
             case ACKNOWLEDGEMENT:
             {
                 if (message.getToken() == null) {
+                    if(currentState()==ConnectionState.CONNECTING)
+                        setState(ConnectionState.CONNECTION_ESTABLISHED);
                     return;
                 }
                 MessageResendTimerTask timerItem = this.timers.remove(ConvertorUtil.bytesToInt(message.getToken()));
@@ -406,6 +410,17 @@ public class CoapClient implements IotProtocol {
     }
 
     public void executeTimer(TimerTask task, long period) {
+        if(currentState()==ConnectionState.CONNECTING) {
+            //its ping
+            if (this.connectCount > 0) {
+                timers.stopAllTimers();
+                client.shutdown();
+                setState(ConnectionState.CHANNEL_FAILED);
+                return;
+            }
+            this.connectCount += 1;
+        }
+
         timer.schedule(task, period);
     }
 
@@ -416,6 +431,7 @@ public class CoapClient implements IotProtocol {
 
     @Override
     public void writeError() {
+
         if (this.listener != null)
             listener.writeError();
     }

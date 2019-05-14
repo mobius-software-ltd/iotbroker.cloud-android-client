@@ -42,7 +42,7 @@ import com.mobius.software.android.iotbroker.main.services.NetworkService;
 
 public class MessageResendTimerTask extends TimerTask {
 
-	private static final Integer MAX_CONNECT_RESEND_TIMES = 5;
+	public static final Integer MAX_CONNECT_RESEND_TIMES = 5;
 
 	private Message message;
 	private IotProtocol client;
@@ -67,7 +67,6 @@ public class MessageResendTimerTask extends TimerTask {
 
 	@Override
 	public void run() {
-
 		if (message instanceof Connect || message instanceof SNConnect) {
 			if (this.connectCount >= MAX_CONNECT_RESEND_TIMES) {
 				this.client.timeout();
