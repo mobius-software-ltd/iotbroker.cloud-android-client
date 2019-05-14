@@ -103,14 +103,12 @@ public class WebsocketClient implements InternetProtocol {
 
         try {
             channelConnect = bootstrap.connect().sync();
-            handler.handshakeFuture().sync();
+            return handler.handshakeFuture().await(3,TimeUnit.SECONDS);
         }
         catch (Exception e) {
             e.printStackTrace();
             return false;
         }
-
-        return true;
     }
 
     @Override
@@ -200,7 +198,7 @@ public class WebsocketClient implements InternetProtocol {
     private URI getUri() {
 
         String type = this.isSecure ? "wss" : "ws";
-        String url = type + "://" + this.address.getHostName() + ":" + String.valueOf(this.address.getPort()) + "/" + type;
+        String url = type + "://" + this.address.getHostName() + ":" + String.valueOf(this.address.getPort()) + "/ws";
         URI uri;
         try {
             uri = new URI(url);

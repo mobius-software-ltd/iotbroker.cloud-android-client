@@ -168,7 +168,8 @@ public class AmqpClient implements IotProtocol {
         this.chanel = 0;
         this.client = new TCPClient(address, workerThreads);
         this.client.setSecure(true);
-
+        this.nextHandle = 1L;
+        
         try {
             this.client.setKeyStore(TLSHelper.getKeyStore(crt, crtPass));
             this.client.setKeyStorePassword(crtPass);
