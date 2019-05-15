@@ -126,7 +126,7 @@ public class SendMessageFragment extends Fragment {
         String [] qosArr;
 		Accounts currAccount=currAccount();
 		if(currAccount!=null) {
-			if(currAccount.getProtocolType()==2) {
+			if(currAccount.getProtocolType()==2 || currAccount.getProtocolType()==3) {
 				view.findViewById(R.id.vw_duplicate).setVisibility(View.INVISIBLE);
 				view.findViewById(R.id.pnl_duplicate).setVisibility(View.INVISIBLE);
 				view.findViewById(R.id.vw_retain).setVisibility(View.INVISIBLE);

@@ -100,6 +100,8 @@ public class TopicsListFragment extends Fragment {
 		if(currAccount!=null) {
 			if(currAccount.getProtocolType()==2) {
 				qosArr =new String[] {"0","1"};
+			} else if(currAccount.getProtocolType()==3) {
+				qosArr =new String[] {"1"};
 			}
 			else {
 				qosArr =new String[] {"0","1","2"};

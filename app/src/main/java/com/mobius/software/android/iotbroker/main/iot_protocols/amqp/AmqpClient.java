@@ -132,6 +132,7 @@ public class AmqpClient implements IotProtocol {
     private Map<String, Long> usedOutgoingMappings = new HashMap<>();
     private Map<Long, String> usedMappings = new HashMap<>();
     private ArrayList<AMQPTransfer> pendingMessages = new ArrayList<>();
+    private int failedCount=0;
 
     public AmqpClient(InetSocketAddress address, String username, String password, String clientID, boolean isClean,
                            int keepalive, Will will, Context context) {
@@ -362,7 +363,6 @@ public class AmqpClient implements IotProtocol {
     public void reinit() {
 
         setState(ConnectionState.CHANNEL_CREATING);
-
         if (client != null)
             client.shutdown();
 
@@ -393,12 +393,22 @@ public class AmqpClient implements IotProtocol {
 
     @Override
     public void connectionLost() {
-        if (isClean)
-            cleanCurrentSession();
-        setState(ConnectionState.CONNECTION_LOST);
+        if(failedCount>=MessageResendTimerTask.MAX_CONNECT_RESEND_TIMES) {
+            if (timers != null)
+                timers.stopAllTimers();
 
-        if (timers != null)
-            timers.stopAllTimers();
+            client.shutdown();
+            setState(ConnectionState.CHANNEL_FAILED);
+        }
+        else {
+            failedCount++;
+            if (isClean)
+                cleanCurrentSession();
+            setState(ConnectionState.CONNECTION_LOST);
+
+            if (timers != null)
+                timers.stopAllTimers();
+        }
     }
 
     private void cleanCurrentSession() {
